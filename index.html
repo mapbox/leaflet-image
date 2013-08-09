@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+        <link rel='stylesheet' type='text/css' href='css/style.css' />
+        <meta http-equiv='content-type' content='text/html; charset=utf-8' />
+        <meta name='viewport' content='initial-scale=1.0 maximum-scale=1.0'>
+        <script>window.L_PREFER_CANVAS = true;</script>
+        <link href='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.css' rel='stylesheet' />
+        <!--[if lte IE 8]>
+          <link href='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.ie.css' rel='stylesheet' />
+        <![endif]-->
+        <script src='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.js'></script>
+        <style>
+            body {
+                width:600px;
+                margin:20px auto;
+            }
+            #map { width:600px; height:300px; }
+        </style>
+    </head>
+    <body>
+        <h1>leaflet-image</h1>
+        <p>turn a map into an image. it's pretty okay but needs a little tweak
+        to work with updates to the map and markers.</p>
+        <h2>Map</h2>
+        <div id='map'></div>
+        <h2>Image</h2>
+        <div id='images'></div>
+        <button id='output'>output</button>
+        <script src='queue.js'></script>
+        <script src='leaflet-image.js'></script>
+        <script src='site.js'></script>
+    </body>
+</html>
