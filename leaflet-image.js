@@ -116,6 +116,8 @@ module.exports = function leafletImage(map, callback) {
             url = marker._icon.src + '?cache=false',
             im = new Image();
 
+        var size = marker.options.icon.options.iconSize;
+
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         im.crossOrigin = '';
@@ -125,7 +127,7 @@ module.exports = function leafletImage(map, callback) {
                 x = pos.x - Math.floor(this.width / 2),
                 y = pos.y - this.height;
 
-            ctx.drawImage(this, x, y);
+            ctx.drawImage(this, x, y, size[0], size[1]);
 
             callback(null, {
                 canvas: canvas
