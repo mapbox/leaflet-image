@@ -9,14 +9,18 @@ module.exports = function leafletImage(map, callback) {
     map.eachLayer(function(l) {
         if (l instanceof L.TileLayer) {
             layerQueue.defer(handleTileLayer, l);
-        } else if (l instanceof L.Marker) {
-            layerQueue.defer(handleMarkerLayer, l);
         }
     });
 
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     }
+
+    map.eachLayer(function(l) {
+        if (l instanceof L.Marker) {
+            layerQueue.defer(handleMarkerLayer, l);
+        }
+    });
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -114,21 +118,18 @@ module.exports = function leafletImage(map, callback) {
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
             url = marker._icon.src + '?cache=false',
-            im = new Image();
-
-        var size = marker.options.icon.options.iconSize;
+            im = new Image(),
+            size = marker.options.icon.options.iconSize,
+            pos = pixelPoint.subtract(minPoint),
+            x = pos.x - (size[0] / 2),
+            y = pos.y - size[1];
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         im.crossOrigin = '';
 
         im.onload = function() {
-            var pos = pixelPoint.subtract(minPoint),
-                x = pos.x - Math.floor(this.width / 2),
-                y = pos.y - this.height;
-
             ctx.drawImage(this, x, y, size[0], size[1]);
-
             callback(null, {
                 canvas: canvas
             });
