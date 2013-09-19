@@ -3,6 +3,16 @@
 Export images out of Leaflet maps without a server component, by using
 Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
+### usage
+
+browserify
+
+    npm install --save leaflet-image
+
+web
+
+    curl https://raw.github.com/mapbox/leaflet-image/gh-pages/leaflet-image.js > leaflet-image.js
+
 ### example
 
 ```js
