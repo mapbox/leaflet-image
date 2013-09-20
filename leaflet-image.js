@@ -1,37 +1,38 @@
 (function(e){if("function"==typeof bootstrap)bootstrap("leafletimage",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeLeafletImage=e}else"undefined"!=typeof window?window.leafletImage=e():global.leafletImage=e()})(function(){var define,ses,bootstrap,module,exports;
-return (function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
+return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var queue = require('./queue');
 
+// leaflet-image
 module.exports = function leafletImage(map, callback) {
+
     var dimensions = map.getSize(),
         layerQueue = new queue(1);
-
-    map.eachLayer(function(l) {
-        if (l instanceof L.TileLayer) {
-            layerQueue.defer(handleTileLayer, l);
-        }
-    });
-
-    if (map._pathRoot) {
-        layerQueue.defer(handlePathRoot, map._pathRoot);
-    }
-
-    map.eachLayer(function(l) {
-        if (l instanceof L.Marker) {
-            layerQueue.defer(handleMarkerLayer, l);
-        }
-    });
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
     canvas.height = dimensions.y;
     var ctx = canvas.getContext('2d');
 
+    // layers are drawn in the same order as they are composed in the DOM:
+    // tiles, paths, and then markers
+    map.eachLayer(drawTileLayer);
+    if (map._pathRoot) layerQueue.defer(handlePathRoot, map._pathRoot);
+    map.eachLayer(drawMarkerLayer);
+    layerQueue.awaitAll(layersDone);
+
+    function drawTileLayer(l) {
+        if (l instanceof L.TileLayer) layerQueue.defer(handleTileLayer, l);
+    }
+
+    function drawMarkerLayer(l) {
+        if (l instanceof L.Marker) layerQueue.defer(handleMarkerLayer, l);
+    }
+
     function done() {
         callback(null, canvas);
     }
 
-    layerQueue.awaitAll(function(err, layers) {
+    function layersDone(err, layers) {
         if (err) throw err;
         layers.forEach(function(layer) {
             if (layer && layer.canvas) {
@@ -39,29 +40,32 @@ module.exports = function leafletImage(map, callback) {
             }
         });
         done();
-    });
+    }
 
     function handleTileLayer(layer, callback) {
         var canvas = document.createElement('canvas');
+
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
-        var ctx = canvas.getContext('2d');
-        var bounds = map.getPixelBounds(),
+
+        var ctx = canvas.getContext('2d'),
+            bounds = map.getPixelBounds(),
             zoom = map.getZoom(),
             tileSize = layer.options.tileSize;
 
-        if (!layer.options.tiles || zoom > layer.options.maxZoom || zoom < layer.options.minZoom) {
+        if (!layer.options.tiles ||
+            zoom > layer.options.maxZoom ||
+            zoom < layer.options.minZoom) {
             return callback();
         }
 
         var tileBounds = L.bounds(
             bounds.min.divideBy(tileSize)._floor(),
-            bounds.max.divideBy(tileSize)._floor());
-
-        var tiles = [],
-            center = tileBounds.getCenter();
-
-        var j, i, point;
+            bounds.max.divideBy(tileSize)._floor()),
+            tiles = [],
+            center = tileBounds.getCenter(),
+            j, i, point,
+            tileQueue = new queue(1);
 
         for (j = tileBounds.min.y; j <= tileBounds.max.y; j++) {
             for (i = tileBounds.min.x; i <= tileBounds.max.x; i++) {
@@ -69,34 +73,37 @@ module.exports = function leafletImage(map, callback) {
             }
         }
 
-        var tileQueue = new queue(1);
-
         tiles.forEach(function(tilePoint) {
-            tileQueue.defer(function(callback) {
-                layer._adjustTilePoint(tilePoint);
-                var tilePos = layer._getTilePos(tilePoint);
-                var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
-                var im = new Image();
-                im.crossOrigin = '';
-                im.onload = function() {
-                    callback(null, {
-                        img: this,
-                        pos: tilePos,
-                        size: tileSize
-                    });
-                };
-                im.src = url;
-            });
-            tileQueue.awaitAll(function(err, data) {
-                data.forEach(function(d) {
-                    ctx.drawImage(d.img, Math.floor(d.pos.x), Math.floor(d.pos.y),
-                        d.size, d.size);
-                });
-                callback(null, {
-                    canvas: canvas
-                });
-            });
+            tileQueue.defer(loadTile, tilePoint);
         });
+
+        tileQueue.awaitAll(tileQueueFinish);
+
+        function loadTile(tilePoint, callback) {
+            layer._adjustTilePoint(tilePoint);
+            var tilePos = layer._getTilePos(tilePoint);
+            var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
+            var im = new Image();
+            im.crossOrigin = '';
+            im.onload = function() {
+                callback(null, {
+                    img: this,
+                    pos: tilePos,
+                    size: tileSize
+                });
+            };
+            im.src = url;
+        }
+
+        function tileQueueFinish(err, data) {
+            data.forEach(drawTile);
+            callback(null, { canvas: canvas });
+        }
+
+        function drawTile(d) {
+            ctx.drawImage(d.img, Math.floor(d.pos.x), Math.floor(d.pos.y),
+                d.size, d.size);
+        }
     }
 
     function handlePathRoot(root, callback) {
@@ -220,6 +227,7 @@ module.exports = function leafletImage(map, callback) {
   function noop() {}
 })();
 
-},{}]},{},[1])(1)
+},{}]},{},[1])
+(1)
 });
 ;

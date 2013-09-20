@@ -21,5 +21,8 @@
   "license": "BSD-2-Clause",
   "bugs": {
     "url": "https://github.com/mapbox/leaflet-image/issues"
+  },
+  "devDependencies": {
+    "browserify": "~2.32.2"
   }
 }
