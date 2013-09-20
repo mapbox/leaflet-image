@@ -48,6 +48,7 @@ module.exports = function leafletImage(map, callback) {
 
         var ctx = canvas.getContext('2d'),
             bounds = map.getPixelBounds(),
+            origin = map.getPixelOrigin(),
             zoom = map.getZoom(),
             tileSize = layer.options.tileSize;
 
@@ -56,6 +57,11 @@ module.exports = function leafletImage(map, callback) {
             zoom < layer.options.minZoom) {
             return callback();
         }
+
+        var offset = new L.Point(
+            ((origin.x / tileSize) - Math.floor(origin.x / tileSize)) * tileSize,
+            ((origin.y / tileSize) - Math.floor(origin.y / tileSize)) * tileSize
+        );
 
         var tileBounds = L.bounds(
             bounds.min.divideBy(tileSize)._floor(),
@@ -79,7 +85,7 @@ module.exports = function leafletImage(map, callback) {
 
         function loadTile(tilePoint, callback) {
             layer._adjustTilePoint(tilePoint);
-            var tilePos = layer._getTilePos(tilePoint);
+            var tilePos = layer._getTilePos(tilePoint).subtract(offset);
             var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
             var im = new Image();
             im.crossOrigin = '';

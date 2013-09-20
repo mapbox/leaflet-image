@@ -136,7 +136,13 @@ document.getElementById('output').addEventListener('click', function() {
 });
 
 window.setTimeout(function() {
-    leafletImage(map, doImage);
+    console.log(map.getCenter().toString());
+    map.panBy([100, 100]);
+    console.log(map.getCenter().toString());
+    // map.setView([0, 0], 2);
+    window.setTimeout(function() {
+        leafletImage(map, doImage);
+    }, 1000);
 }, 1000);
 
 function doImage(err, canvas) {
