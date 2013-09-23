@@ -86,8 +86,12 @@ module.exports = function leafletImage(map, callback) {
         tileQueue.awaitAll(tileQueueFinish);
 
         function loadTile(tilePoint, callback) {
+            //originalTilePoint is used to handle repeated tiles wrap the world.
+            var originalTilePoint = tilePoint.clone();
             layer._adjustTilePoint(tilePoint);
-            var tilePos = layer._getTilePos(tilePoint).subtract(offset);
+            var tilePos = layer._getTilePos(originalTilePoint)
+                .subtract(bounds.min)
+                .add(origin);
             var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
             var im = new Image();
             im.crossOrigin = '';
