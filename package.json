@@ -1,6 +1,6 @@
 {
   "name": "leaflet-image",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "export leaflet maps as images",
   "main": "index.js",
   "scripts": {
