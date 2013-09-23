@@ -3,6 +3,14 @@
 Export images out of Leaflet maps without a server component, by using
 Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
+## Requirements
+
+* Any tile layer providers (OSM, MapBox, etc) must support [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
+* Any markers on the map must also support CORS. The default Leaflet-CDN markers
+  don't, so they aren't supported.
+* Your browser must support [CORS](http://caniuse.com/#feat=cors) and [Canvas](http://caniuse.com/#feat=canvas),
+  so `IE >= 10` with no exceptions.
+
 ### usage
 
 browserify

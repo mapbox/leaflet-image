@@ -52,8 +52,7 @@ module.exports = function leafletImage(map, callback) {
             zoom = map.getZoom(),
             tileSize = layer.options.tileSize;
 
-        if (!layer.options.tiles ||
-            zoom > layer.options.maxZoom ||
+        if (zoom > layer.options.maxZoom ||
             zoom < layer.options.minZoom) {
             return callback();
         }
