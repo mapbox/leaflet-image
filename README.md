@@ -10,6 +10,8 @@ Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
   don't, so they aren't supported.
 * Your browser must support [CORS](http://caniuse.com/#feat=cors) and [Canvas](http://caniuse.com/#feat=canvas),
   so `IE >= 10` with no exceptions.
+* You must set `L_PREFER_CANVAS = true;` so that vector layers are drawn in Canvas
+  rather than SVG or VML.
 
 ### usage
 
