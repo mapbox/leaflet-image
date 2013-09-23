@@ -81,18 +81,23 @@ module.exports = function leafletImage(map, callback) {
         }
 
         tiles.forEach(function(tilePoint) {
-            tileQueue.defer(loadTile, tilePoint);
+            var originalTilePoint = tilePoint.clone();
+
+            layer._adjustTilePoint(tilePoint);
+
+            var tilePos = layer._getTilePos(originalTilePoint)
+                .subtract(bounds.min)
+                .add(origin);
+
+            if (tilePoint.y >= 0) {
+                var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
+                tileQueue.defer(loadTile, url, tilePos, tileSize);
+            }
         });
 
         tileQueue.awaitAll(tileQueueFinish);
 
-        function loadTile(tilePoint, callback) {
-            var originalTilePoint = tilePoint.clone();
-            layer._adjustTilePoint(tilePoint);
-            var tilePos = layer._getTilePos(originalTilePoint)
-                .subtract(bounds.min)
-                .add(origin);
-            var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
+        function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
             im.crossOrigin = '';
             im.onload = function() {
