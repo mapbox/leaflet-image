@@ -86,7 +86,6 @@ module.exports = function leafletImage(map, callback) {
         tileQueue.awaitAll(tileQueueFinish);
 
         function loadTile(tilePoint, callback) {
-            //originalTilePoint is used to handle repeated tiles wrap the world.
             var originalTilePoint = tilePoint.clone();
             layer._adjustTilePoint(tilePoint);
             var tilePos = layer._getTilePos(originalTilePoint)
@@ -117,11 +116,13 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handlePathRoot(root, callback) {
+        var bounds = map.getPixelBounds();
+        var origin = map.getPixelOrigin();
         var canvas = document.createElement('canvas');
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
-        var pos = L.DomUtil.getPosition(root);
+        var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
         ctx.drawImage(root, pos.x, pos.y);
         callback(null, {
             canvas: canvas
