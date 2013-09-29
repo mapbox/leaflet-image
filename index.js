@@ -78,7 +78,10 @@ module.exports = function leafletImage(map, callback) {
             }
         }
 
-        tiles.forEach(function(tilePoint) {
+        tiles.forEach(queueTile);
+        tileQueue.awaitAll(tileQueueFinish);
+
+        function queueTile(tilePoint) {
             var originalTilePoint = tilePoint.clone();
 
             layer._adjustTilePoint(tilePoint);
@@ -91,9 +94,7 @@ module.exports = function leafletImage(map, callback) {
                 var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
                 tileQueue.defer(loadTile, url, tilePos, tileSize);
             }
-        });
-
-        tileQueue.awaitAll(tileQueueFinish);
+        }
 
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
@@ -120,14 +121,47 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handlePathRoot(root, callback) {
-        var bounds = map.getPixelBounds();
-        var origin = map.getPixelOrigin();
-        var canvas = document.createElement('canvas');
+        switch (root.tagName.toLowerCase()) {
+            case 'canvas': return handlePathCanvas(root, callback);
+            case 'svg': return handlePathSVG(root, callback);
+        }
+    }
+
+    function handlePathCanvas(root, callback) {
+        var bounds = map.getPixelBounds(),
+            origin = map.getPixelOrigin(),
+            canvas = document.createElement('canvas');
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
-        var ctx = canvas.getContext('2d');
-        var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
+        var ctx = canvas.getContext('2d'),
+            pos = L.DomUtil.getPosition(root)
+                .subtract(bounds.min)
+                .add(origin);
         ctx.drawImage(root, pos.x, pos.y);
+        callback(null, {
+            canvas: canvas
+        });
+    }
+
+    function handlePathSVG(root, callback) {
+        var bounds = map.getPixelBounds(),
+            origin = map.getPixelOrigin(),
+            canvas = document.createElement('canvas');
+
+        canvas.width = dimensions.x;
+        canvas.height = dimensions.y;
+
+        var ctx = canvas.getContext('2d'),
+            img = new Image(),
+            pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
+
+        img.src = 'data:image/svg+xml;utf8,' +
+            (new XMLSerializer()).serializeToString(root)
+                .replace('<svg', "<svg xmlns='http://www.w3.org/2000/svg' ");
+
+
+        ctx.drawImage(img, pos.x, pos.y);
+
         callback(null, {
             canvas: canvas
         });
