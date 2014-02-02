@@ -40,6 +40,14 @@ leafletImage(map, function(err, canvas) {
 });
 ```
 
+### Plugin CDN
+
+leaflet-image is [available through the Mapbox Plugin CDN](https://www.mapbox.com/mapbox.js/plugins/#leaflet-image) so you don't need to download & copy it. Just include the following script tag:
+
+```html
+<script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-image/v0.0.3/leaflet-image.js'></script>
+```
+
 ### api
 
 ```js
