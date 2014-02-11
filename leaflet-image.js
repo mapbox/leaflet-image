@@ -145,10 +145,12 @@ module.exports = function leafletImage(map, callback) {
             pixelPoint = map.project(marker.getLatLng()),
             url = marker._icon.src + '?cache=false',
             im = new Image(),
-            size = marker.options.icon.options.iconSize,
+            options = marker.options.icon.options,
+            size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
-            x = pos.x - (size[0] / 2),
-            y = pos.y - size[1];
+            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
+            x = pos.x - size[0] + anchor.x,
+            y = pos.y - anchor.y; 
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
