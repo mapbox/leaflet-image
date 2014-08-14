@@ -21,6 +21,7 @@ module.exports = function leafletImage(map, callback) {
 
     function drawTileLayer(l) {
         if (l instanceof L.TileLayer) layerQueue.defer(handleTileLayer, l);
+        else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
 
     function drawMarkerLayer(l) {

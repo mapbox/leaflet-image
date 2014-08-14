@@ -32,6 +32,7 @@
 <button id='snap' class='ui-button'>Take a snapshot</button>
 <div id='snapshot'></div>
 <div id='map'></div>
+<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.0/leaflet-heat.js'></script>
 <script src='leaflet-image.js'></script>
 <script>
 L.mapbox.accessToken = 'pk.eyJ1IjoidG1jdyIsImEiOiJIZmRUQjRBIn0.lRARalfaGHnPdRcc-7QZYQ';
@@ -52,6 +53,20 @@ function doImage(err, canvas) {
     snapshot.innerHTML = '';
     snapshot.appendChild(img);
 }
+
+var heat = L.heatLayer([], {maxZoom: 18}).addTo(map);
+var draw = true;
+
+// add points on mouse move (except when interacting with the map)
+map.on({
+    movestart: function () { draw = false; },
+    moveend:   function () { draw = true; },
+    mousemove: function (e) {
+        if (draw) {
+            heat.addLatLng(e.latlng);
+        }
+    }
+})
 </script>
 </body>
 </html>
