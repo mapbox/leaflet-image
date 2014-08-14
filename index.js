@@ -90,7 +90,7 @@ module.exports = function leafletImage(map, callback) {
                 .add(origin);
 
             if (tilePoint.y >= 0) {
-                var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
+                var url = addCacheString(layer.getTileUrl(tilePoint));
                 tileQueue.defer(loadTile, url, tilePos, tileSize);
             }
         });
@@ -122,9 +122,9 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handlePathRoot(root, callback) {
-        var bounds = map.getPixelBounds();
-        var origin = map.getPixelOrigin();
-        var canvas = document.createElement('canvas');
+        var bounds = map.getPixelBounds(),
+            origin = map.getPixelOrigin(),
+            canvas = document.createElement('canvas');
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
@@ -141,14 +141,14 @@ module.exports = function leafletImage(map, callback) {
             pixelBounds = map.getPixelBounds(),
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
-            url = marker._icon.src + '?cache=false',
+            url = addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
             anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
             x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y; 
+            y = pos.y - anchor.y;
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
@@ -162,5 +162,9 @@ module.exports = function leafletImage(map, callback) {
         };
 
         im.src = url;
+    }
+
+    function addCacheString(url) {
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
     }
 };

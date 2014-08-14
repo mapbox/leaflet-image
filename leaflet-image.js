@@ -1,6 +1,5 @@
-(function(e){if("function"==typeof bootstrap)bootstrap("leafletimage",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeLeafletImage=e}else"undefined"!=typeof window?window.leafletImage=e():global.leafletImage=e()})(function(){var define,ses,bootstrap,module,exports;
-return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var queue = require('./queue');
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.leafletImage=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+var queue = _dereq_('./queue');
 
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
@@ -92,7 +91,7 @@ module.exports = function leafletImage(map, callback) {
                 .add(origin);
 
             if (tilePoint.y >= 0) {
-                var url = layer.getTileUrl(tilePoint) + '?cache=' + (+new Date());
+                var url = addCacheString(layer.getTileUrl(tilePoint));
                 tileQueue.defer(loadTile, url, tilePos, tileSize);
             }
         });
@@ -124,9 +123,9 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handlePathRoot(root, callback) {
-        var bounds = map.getPixelBounds();
-        var origin = map.getPixelOrigin();
-        var canvas = document.createElement('canvas');
+        var bounds = map.getPixelBounds(),
+            origin = map.getPixelOrigin(),
+            canvas = document.createElement('canvas');
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
@@ -143,14 +142,14 @@ module.exports = function leafletImage(map, callback) {
             pixelBounds = map.getPixelBounds(),
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
-            url = marker._icon.src + '?cache=false',
+            url = addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
             anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
             x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y; 
+            y = pos.y - anchor.y;
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
@@ -165,9 +164,13 @@ module.exports = function leafletImage(map, callback) {
 
         im.src = url;
     }
+
+    function addCacheString(url) {
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+    }
 };
 
-},{"./queue":2}],2:[function(require,module,exports){
+},{"./queue":2}],2:[function(_dereq_,module,exports){
 (function() {
   if (typeof module === "undefined") self.queue = queue;
   else module.exports = queue;
@@ -251,4 +254,3 @@ module.exports = function leafletImage(map, callback) {
 },{}]},{},[1])
 (1)
 });
-;

@@ -1,34 +1,57 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <title>leaflet-image</title>
-        <link rel='stylesheet' type='text/css' href='css/style.css' />
-        <meta http-equiv='content-type' content='text/html; charset=utf-8' />
-        <meta name='viewport' content='initial-scale=1.0 maximum-scale=1.0'>
-        <script>window.L_PREFER_CANVAS = true;</script>
-        <link href='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.css' rel='stylesheet' />
-        <!--[if lte IE 8]>
-          <link href='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.ie.css' rel='stylesheet' />
-        <![endif]-->
-        <script src='//api.tiles.mapbox.com/mapbox.js/v1.3.1/mapbox.js'></script>
-        <style>
-            body {
-                width:600px;
-                margin:20px auto;
-            }
-            #map { width:600px; height:300px; }
-        </style>
-    </head>
-    <body>
-        <h1><a href='https://github.com/mapbox/leaflet-image'>leaflet-image</a></h1>
-        <p>turn a map into an image.</p>
-        <h2>Map</h2>
-        <div id='map'></div>
-        <h2>Image</h2>
-        <div id='images'></div>
-        <button id='output'>output</button>
-        <script src='leaflet-image.js'></script>
-        <script src='site.js'></script>
-    </body>
+<head>
+<meta charset=utf-8 />
+<title>Leaflet Image</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+<style>
+.ui-button {
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:1000;
+  }
+#map {
+  width:50%;
+  }
+#snapshot {
+  position:absolute;
+  top:0;bottom:0;right:0;
+  width:50%;
+  }
+</style>
+
+<button id='snap' class='ui-button'>Take a snapshot</button>
+<div id='snapshot'></div>
+<div id='map'></div>
+<script src='leaflet-image.js'></script>
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoidG1jdyIsImEiOiJIZmRUQjRBIn0.lRARalfaGHnPdRcc-7QZYQ';
+var snapshot = document.getElementById('snapshot');
+var map = L.mapbox.map('map', 'examples.map-i875kd35')
+  .setView([38.88995, -77.00906], 15);
+
+document.getElementById('snap').addEventListener('click', function() {
+    leafletImage(map, doImage);
+});
+
+function doImage(err, canvas) {
+    var img = document.createElement('img');
+    var dimensions = map.getSize();
+    img.width = dimensions.x;
+    img.height = dimensions.y;
+    img.src = canvas.toDataURL();
+    snapshot.innerHTML = '';
+    snapshot.appendChild(img);
+}
+</script>
+</body>
 </html>
