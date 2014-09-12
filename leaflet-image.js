@@ -5,7 +5,8 @@ var queue = _dereq_('./queue');
 module.exports = function leafletImage(map, callback) {
 
     var dimensions = map.getSize(),
-        layerQueue = new queue(1);
+        layerQueue = new queue(1),
+        ts = new Date();
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -167,7 +168,7 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+ts);
     }
 };
 
