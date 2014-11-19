@@ -5,7 +5,7 @@ Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
 ## Requirements
 
-* Any tile layer providers (OSM, MapBox, etc) must support [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
+* Tile layer providers (OSM, MapBox, etc) must support [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 * Any markers on the map must also support CORS. The default Leaflet-CDN markers
   don't, so they aren't supported.
 * Your browser must support [CORS](http://caniuse.com/#feat=cors) and [Canvas](http://caniuse.com/#feat=canvas),
@@ -13,7 +13,7 @@ Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 * You must set `L_PREFER_CANVAS = true;` so that vector layers are drawn in Canvas
   rather than SVG or VML.
 
-### usage
+### Usage
 
 browserify
 
@@ -23,10 +23,10 @@ web
 
     curl https://raw.github.com/mapbox/leaflet-image/gh-pages/leaflet-image.js > leaflet-image.js
 
-### example
+### Example
 
 ```js
-var map = L.mapbox.map('map', 'tmcw.map-u4ca5hnt').setView([38.9, -77.03], 14);
+var map = L.mapbox.map('map', 'YOUR.MAPID').setView([38.9, -77.03], 14);
 leafletImage(map, function(err, canvas) {
     // now you have canvas
     // example thing to do with that canvas:
@@ -48,10 +48,15 @@ leaflet-image is [available through the Mapbox Plugin CDN](https://www.mapbox.co
 <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-image/v0.0.3/leaflet-image.js'></script>
 ```
 
-### api
+### API
 
 ```js
 leafletImage(map, callback)
 ```
 
 map is a `L.map` or `L.mapbox.map`, callback takes `(err, canvas)`.
+
+## See Also
+
+* The [Mapbox Static Image API](https://www.mapbox.com/developers/api/static/) is simpler to use
+  and faster than this approach.
