@@ -44,7 +44,7 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handleTileLayer(layer, callback) {
-	    var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
+        var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
             canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
@@ -92,25 +92,25 @@ module.exports = function leafletImage(map, callback) {
                 .add(origin);
 
             if (tilePoint.y >= 0) {
-	            if (isCanvasLayer) {
-		            var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y];
-		            tileQueue.defer(canvasTile, tile, tilePos, tileSize);
-	            } else {
-		            var url = addCacheString(layer.getTileUrl(tilePoint));
-		            tileQueue.defer(loadTile, url, tilePos, tileSize);
-	            }
+                if (isCanvasLayer) {
+                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y];
+                    tileQueue.defer(canvasTile, tile, tilePos, tileSize);
+                } else {
+                    var url = addCacheString(layer.getTileUrl(tilePoint));
+                    tileQueue.defer(loadTile, url, tilePos, tileSize);
+                }
             }
         });
 
         tileQueue.awaitAll(tileQueueFinish);
 
-	    function canvasTile(tile, tilePos, tileSize, callback) {
-		    callback(null, {
-			    img: tile,
-			    pos: tilePos,
-			    size: tileSize
-		    });
-	    }
+        function canvasTile(tile, tilePos, tileSize, callback) {
+            callback(null, {
+                img: tile,
+                pos: tilePos,
+                size: tileSize
+            });
+        }
 
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
