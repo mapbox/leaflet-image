@@ -1,12 +1,11 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.leafletImage=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-var queue = _dereq_('./queue');
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.leafletImage=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var queue = require('./queue');
 
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
 
     var dimensions = map.getSize(),
-        layerQueue = new queue(1),
-        ts = new Date();
+        layerQueue = new queue(1);
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -46,7 +45,8 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handleTileLayer(layer, callback) {
-        var canvas = document.createElement('canvas');
+        var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
+            canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
@@ -93,12 +93,25 @@ module.exports = function leafletImage(map, callback) {
                 .add(origin);
 
             if (tilePoint.y >= 0) {
-                var url = addCacheString(layer.getTileUrl(tilePoint));
-                tileQueue.defer(loadTile, url, tilePos, tileSize);
+                if (isCanvasLayer) {
+                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y];
+                    tileQueue.defer(canvasTile, tile, tilePos, tileSize);
+                } else {
+                    var url = addCacheString(layer.getTileUrl(tilePoint));
+                    tileQueue.defer(loadTile, url, tilePos, tileSize);
+                }
             }
         });
 
         tileQueue.awaitAll(tileQueueFinish);
+
+        function canvasTile(tile, tilePos, tileSize, callback) {
+            callback(null, {
+                img: tile,
+                pos: tilePos,
+                size: tileSize
+            });
+        }
 
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
@@ -168,11 +181,11 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+ts);
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
     }
 };
 
-},{"./queue":2}],2:[function(_dereq_,module,exports){
+},{"./queue":2}],2:[function(require,module,exports){
 (function() {
   if (typeof module === "undefined") self.queue = queue;
   else module.exports = queue;
@@ -253,6 +266,5 @@ module.exports = function leafletImage(map, callback) {
   function noop() {}
 })();
 
-},{}]},{},[1])
-(1)
+},{}]},{},[1])(1)
 });
