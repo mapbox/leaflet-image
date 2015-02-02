@@ -17,7 +17,7 @@ module.exports = function leafletImage(map, callback) {
     dummycanvas.width = 1;
     dummycanvas.height = 1;
     var dummyctx = dummycanvas.getContext('2d');
-    dummyctx.fillStyle = "rgb(255,255,255)";
+    dummyctx.fillStyle = "rgb(0,0,0,0)";
     dummyctx.fillRect(0, 0, 1, 1);
 
     // layers are drawn in the same order as they are composed in the DOM:
