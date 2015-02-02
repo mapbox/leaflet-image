@@ -11,6 +11,15 @@ module.exports = function leafletImage(map, callback) {
     canvas.height = dimensions.y;
     var ctx = canvas.getContext('2d');
 
+    // dummy canvas image when loadTile get 404 error
+    // and layer don't have errorTileUrl
+    var dummycanvas = document.createElement('canvas');
+    dummycanvas.width = 1;
+    dummycanvas.height = 1;
+    var dummyctx = dummycanvas.getContext('2d');
+    dummyctx.fillStyle = "rgb(255,255,255)";
+    dummyctx.fillRect(0, 0, 1, 1);
+
     // layers are drawn in the same order as they are composed in the DOM:
     // tiles, paths, and then markers
     map.eachLayer(drawTileLayer);
@@ -127,6 +136,19 @@ module.exports = function leafletImage(map, callback) {
                     pos: tilePos,
                     size: tileSize
                 });
+            };
+            im.onerror = function(e) {
+                // use canvas instead of errorTileUrl if errorTileUrl get 404
+                if (layer.options.errorTileUrl != "" && e.target.errorCheck === undefined) {
+                    e.target.errorCheck = true;
+                    e.target.src = layer.options.errorTileUrl;
+                } else {
+                    callback(null, {
+                        img: dummycanvas,
+                        pos: tilePos,
+                        size: tileSize
+                    });
+                }
             };
             im.src = url;
         }
