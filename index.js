@@ -25,7 +25,7 @@ module.exports = function leafletImage(map, callback) {
     map.eachLayer(drawTileLayer);
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
-    } else if (map._panes) {
+    } else if (map._panes && map._panes.overlayPane.firstChild) {
         layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
     }
     map.eachLayer(drawMarkerLayer);
