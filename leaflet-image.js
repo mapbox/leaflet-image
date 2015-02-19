@@ -1,4 +1,5 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.leafletImage=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(e){if("function"==typeof bootstrap)bootstrap("leafletimage",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeLeafletImage=e}else"undefined"!=typeof window?window.leafletImage=e():global.leafletImage=e()})(function(){var define,ses,bootstrap,module,exports;
+return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var queue = require('./queue');
 
 // leaflet-image
@@ -12,10 +13,23 @@ module.exports = function leafletImage(map, callback) {
     canvas.height = dimensions.y;
     var ctx = canvas.getContext('2d');
 
+    // dummy canvas image when loadTile get 404 error
+    // and layer don't have errorTileUrl
+    var dummycanvas = document.createElement('canvas');
+    dummycanvas.width = 1;
+    dummycanvas.height = 1;
+    var dummyctx = dummycanvas.getContext('2d');
+    dummyctx.fillStyle = 'rgba(0,0,0,0)';
+    dummyctx.fillRect(0, 0, 1, 1);
+
     // layers are drawn in the same order as they are composed in the DOM:
     // tiles, paths, and then markers
     map.eachLayer(drawTileLayer);
-    if (map._pathRoot) layerQueue.defer(handlePathRoot, map._pathRoot);
+    if (map._pathRoot) {
+        layerQueue.defer(handlePathRoot, map._pathRoot);
+    } else if (map._panes && map._panes.overlayPane.firstChild) {
+        layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
+    }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
 
@@ -86,7 +100,9 @@ module.exports = function leafletImage(map, callback) {
         tiles.forEach(function(tilePoint) {
             var originalTilePoint = tilePoint.clone();
 
-            layer._adjustTilePoint(tilePoint);
+            if (layer._adjustTilePoint) {
+                layer._adjustTilePoint(tilePoint);
+            }
 
             var tilePos = layer._getTilePos(originalTilePoint)
                 .subtract(bounds.min)
@@ -122,6 +138,19 @@ module.exports = function leafletImage(map, callback) {
                     pos: tilePos,
                     size: tileSize
                 });
+            };
+            im.onerror = function(e) {
+                // use canvas instead of errorTileUrl if errorTileUrl get 404
+                if (layer.options.errorTileUrl != '' && e.target.errorCheck === undefined) {
+                    e.target.errorCheck = true;
+                    e.target.src = layer.options.errorTileUrl;
+                } else {
+                    callback(null, {
+                        img: dummycanvas,
+                        pos: tilePos,
+                        size: tileSize
+                    });
+                }
             };
             im.src = url;
         }
@@ -266,5 +295,7 @@ module.exports = function leafletImage(map, callback) {
   function noop() {}
 })();
 
-},{}]},{},[1])(1)
+},{}]},{},[1])
+(1)
 });
+;

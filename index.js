@@ -17,7 +17,7 @@ module.exports = function leafletImage(map, callback) {
     dummycanvas.width = 1;
     dummycanvas.height = 1;
     var dummyctx = dummycanvas.getContext('2d');
-    dummyctx.fillStyle = "rgb(0,0,0,0)";
+    dummyctx.fillStyle = 'rgba(0,0,0,0)';
     dummyctx.fillRect(0, 0, 1, 1);
 
     // layers are drawn in the same order as they are composed in the DOM:
@@ -97,7 +97,7 @@ module.exports = function leafletImage(map, callback) {
 
         tiles.forEach(function(tilePoint) {
             var originalTilePoint = tilePoint.clone();
-            
+
             if (layer._adjustTilePoint) {
                 layer._adjustTilePoint(tilePoint);
             }
@@ -139,7 +139,7 @@ module.exports = function leafletImage(map, callback) {
             };
             im.onerror = function(e) {
                 // use canvas instead of errorTileUrl if errorTileUrl get 404
-                if (layer.options.errorTileUrl != "" && e.target.errorCheck === undefined) {
+                if (layer.options.errorTileUrl != '' && e.target.errorCheck === undefined) {
                     e.target.errorCheck = true;
                     e.target.src = layer.options.errorTileUrl;
                 } else {
