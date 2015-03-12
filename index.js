@@ -210,7 +210,7 @@ module.exports = function leafletImage(map, callback) {
 
         im.src = url;
 
-        if(isBase64) im.onload();
+        if (isBase64) im.onload();
     }
 
     function addCacheString(url) {
