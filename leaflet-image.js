@@ -186,13 +186,17 @@ module.exports = function leafletImage(map, callback) {
             pixelBounds = map.getPixelBounds(),
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
-            url = addCacheString(marker._icon.src),
+            isBase64 = /^data\:/.test(marker._icon.src),
+            url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
-            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
-            x = pos.x - size[0] + anchor.x,
+            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true));
+
+        if(size instanceof L.Point) size = [size.x, size.y];
+
+        var x = pos.x - size[0] + anchor.x,
             y = pos.y - anchor.y;
 
         canvas.width = dimensions.x;
@@ -207,10 +211,12 @@ module.exports = function leafletImage(map, callback) {
         };
 
         im.src = url;
+
+        if(isBase64) im.onload();
     }
 
     function addCacheString(url) {
-        return /^data\:/.test(url) ? url : (url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date()));
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
     }
 };
 
