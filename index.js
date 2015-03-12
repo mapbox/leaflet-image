@@ -208,6 +208,6 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        return /^data\:/.test(url) ? url : (url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date()));
     }
 };
