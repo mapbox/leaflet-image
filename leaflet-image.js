@@ -194,7 +194,7 @@ module.exports = function leafletImage(map, callback) {
             pos = pixelPoint.subtract(minPoint),
             anchor = L.point(options.iconAnchor || size && size.divideBy(2, true));
 
-        if(size instanceof L.Point) size = [size.x, size.y];
+        if (size instanceof L.Point) size = [size.x, size.y];
 
         var x = pos.x - size[0] + anchor.x,
             y = pos.y - anchor.y;
@@ -212,7 +212,7 @@ module.exports = function leafletImage(map, callback) {
 
         im.src = url;
 
-        if(isBase64) im.onload();
+        if (isBase64) im.onload();
     }
 
     function addCacheString(url) {
