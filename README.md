@@ -12,6 +12,9 @@ Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
   so `IE >= 10` with no exceptions.
 * You must set `L_PREFER_CANVAS = true;` so that vector layers are drawn in Canvas
   rather than SVG or VML.
+* This library **does not rasterize HTML** because **browsers cannot rasterize HTML**. Therefore,
+  L.divIcon and other HTML-based features of a map, like zoom controls or legends, are not
+  included in the output, because they are HTML.
 
 ### Usage
 
