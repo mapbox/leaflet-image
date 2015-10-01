@@ -59,6 +59,10 @@ leafletImage(map, callback)
 
 map is a `L.map` or `L.mapbox.map`, callback takes `(err, canvas)`.
 
+## Attribution
+
+Any images you generate from maps that require attribution - which is most, including all from commercial sources and those that include any data from OpenStreetMap - will require the same attribution as the map did. Remember to attribute.
+
 ## See Also
 
 * The [Mapbox Static Image API](https://www.mapbox.com/developers/api/static/) is simpler to use
