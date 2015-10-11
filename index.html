@@ -39,7 +39,7 @@ L.mapbox.accessToken = 'pk.eyJ1IjoidG1jdyIsImEiOiJIZmRUQjRBIn0.lRARalfaGHnPdRcc-
 var snapshot = document.getElementById('snapshot');
 var map = L.mapbox.map('map', 'mapbox.streets')
   .setView([38.88995, -77.00906], 15);
-
+L.marker([38.88995, -77.00906]).addTo(map);
 document.getElementById('snap').addEventListener('click', function() {
     leafletImage(map, doImage);
 });

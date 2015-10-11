@@ -1,7 +1,7 @@
 var queue = require('./queue');
 
 // leaflet-image
-module.exports = function leafletImage(map, callback) {
+module.exports = function leafletImage(map, callback, useAjax) {
 
     var dimensions = map.getSize(),
         layerQueue = new queue(1);
@@ -208,6 +208,13 @@ module.exports = function leafletImage(map, callback) {
             });
         };
 
+        if (useAjax) {
+            getBase64(url, function(data) {
+                im.src = 'data: image/png;base64, ' + data;
+                im.onload();
+            });
+            return;
+        }
         im.src = url;
 
         if (isBase64) im.onload();
@@ -215,5 +222,25 @@ module.exports = function leafletImage(map, callback) {
 
     function addCacheString(url) {
         return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+    }
+
+    function getBase64(url, callback) {
+        var request = new XMLHttpRequest();
+        request.open('GET', url, true);
+        request.responseType = 'arraybuffer';
+        request.onload = function() {
+            if (request.status >= 200 && request.status < 400) {
+                var buffer = this.response,
+                    binary = '',
+                    bytes = new Uint8Array(buffer),
+                    len = bytes.byteLength;
+
+                for (var i = 0; i < len; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                callback(btoa(binary));
+            }
+        };
+        request.send();
     }
 };
