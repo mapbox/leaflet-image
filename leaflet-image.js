@@ -6,7 +6,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
 
     var dimensions = map.getSize(),
         layerQueue = new queue(1),
-	      imageCache = {};
+        imageCache = {};
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -209,7 +209,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
             if (loaded) return;
             loaded = true;
             ctx.drawImage(this, x, y, size[0], size[1]);
-                callback(null, {
+            callback(null, {
                 canvas: canvas
             });
         };
@@ -267,6 +267,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
         request.send();
     }
 };
+
 },{"./queue":2}],2:[function(require,module,exports){
 (function() {
   if (typeof module === "undefined") self.queue = queue;
