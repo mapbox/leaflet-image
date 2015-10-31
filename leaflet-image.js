@@ -5,7 +5,8 @@ var queue = require('./queue');
 module.exports = function leafletImage(map, callback, useAjax) {
 
     var dimensions = map.getSize(),
-        layerQueue = new queue(1);
+        layerQueue = new queue(1),
+	      imageCache = {};
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -186,12 +187,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
             isBase64 = /^data\:/.test(marker._icon.src),
+            cache = imageCache[marker._icon.src],
             url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
-            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true));
+            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
+            loaded = false;
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
@@ -203,22 +206,41 @@ module.exports = function leafletImage(map, callback, useAjax) {
         im.crossOrigin = '';
 
         im.onload = function() {
+            if (loaded) return;
+            loaded = true;
             ctx.drawImage(this, x, y, size[0], size[1]);
-            callback(null, {
+                callback(null, {
                 canvas: canvas
             });
         };
 
-        if (useAjax) {
-            getBase64(url, function(data) {
-                im.src = 'data: image/png;base64, ' + data;
-                im.onload();
-            });
-            return;
-        }
-        im.src = url;
+        if (useAjax && !isBase64) {
+            if (cache === undefined) {
+                getBase64(url, function (data) {
+                    im.src = imageCache[marker._icon.src] = 'data: image/png;base64, ' + data;
+                    if (!loaded) {
+                        setTimeout(function() {
+                            im.onload();
+                        },0);
+                    }
+                });
+            } else {
+                im.src = cache;
+                if (!loaded) {
+                    setTimeout(function() {
+                        im.onload();
+                    },0);
+                }
+            }
+        } else {
+            im.src = url;
 
-        if (isBase64) im.onload();
+            if (isBase64 && !loaded) {
+                setTimeout(function () {
+                    im.onload();
+                }, 0);
+            }
+        }
     }
 
     function addCacheString(url) {
@@ -245,7 +267,6 @@ module.exports = function leafletImage(map, callback, useAjax) {
         request.send();
     }
 };
-
 },{"./queue":2}],2:[function(require,module,exports){
 (function() {
   if (typeof module === "undefined") self.queue = queue;
