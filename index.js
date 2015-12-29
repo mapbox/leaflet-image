@@ -29,7 +29,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
     } else if (map._panes && map._panes.overlayPane.firstChild) {
         layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
     }
-    map.eachLayer(drawMarkerLayer);
+    map.eachLayer(drawLayer);
     layerQueue.awaitAll(layersDone);
 
     function drawTileLayer(l) {
@@ -37,9 +37,11 @@ module.exports = function leafletImage(map, callback, useAjax) {
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
 
-    function drawMarkerLayer(l) {
+    function drawLayer(l) {
         if (l instanceof L.Marker && l.options.icon instanceof L.Icon) {
             layerQueue.defer(handleMarkerLayer, l);
+        } else if (typeof l.redraw === 'function' && l.canvas) {
+            layerQueue.defer(handleCanvasLayer, l);
         }
     }
 
@@ -52,6 +54,11 @@ module.exports = function leafletImage(map, callback, useAjax) {
         layers.forEach(function(layer) {
             if (layer && layer.canvas) {
                 ctx.drawImage(layer.canvas, 0, 0);
+            }
+        });
+		layers.forEach(function (layer) {
+            if (layer && layer.img && !layer.canvas) {
+                 ctx.drawImage(layer.img, 0, 0);
             }
         });
         done();
@@ -264,5 +271,15 @@ module.exports = function leafletImage(map, callback, useAjax) {
             }
         };
         request.send();
+    }
+	
+	function handleCanvasLayer(l, callback) {
+        l.redraw(function () {
+            var img = new Image();
+            img.src = l.canvas.toDataURL();
+            callback(null, {
+                img: img
+            });
+        })
     }
 };
