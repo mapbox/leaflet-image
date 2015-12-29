@@ -56,7 +56,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
                 ctx.drawImage(layer.canvas, 0, 0);
             }
         });
-		layers.forEach(function (layer) {
+        layers.forEach(function (layer) {
             if (layer && layer.img && !layer.canvas) {
                  ctx.drawImage(layer.img, 0, 0);
             }
@@ -273,7 +273,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
         request.send();
     }
 	
-	function handleCanvasLayer(l, callback) {
+    function handleCanvasLayer(l, callback) {
         l.redraw(function () {
             var img = new Image();
             img.src = l.canvas.toDataURL();
