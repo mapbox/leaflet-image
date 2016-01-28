@@ -12,6 +12,7 @@ module.exports = function leafletImage(map, callback) {
     canvas.width = dimensions.x;
     canvas.height = dimensions.y;
     var ctx = canvas.getContext('2d');
+    var sessionTimestamp = +new Date();
 
     // dummy canvas image when loadTile get 404 error
     // and layer don't have errorTileUrl
@@ -187,7 +188,7 @@ module.exports = function leafletImage(map, callback) {
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
             isBase64 = /^data\:/.test(marker._icon.src),
-            url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
+            url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src, sessionTimestamp),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
@@ -215,8 +216,9 @@ module.exports = function leafletImage(map, callback) {
         if (isBase64) im.onload();
     }
 
-    function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+    function addCacheString(url, timestamp) {
+        timestamp = timestamp || +new Date();
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + timestamp;
     }
 };
 
