@@ -25,11 +25,14 @@ module.exports = function leafletImage(map, callback) {
     // layers are drawn in the same order as they are composed in the DOM:
     // tiles, paths, and then markers
     map.eachLayer(drawTileLayer);
-    if (map._pathRoot) {
-        layerQueue.defer(handlePathRoot, map._pathRoot);
-    } else if (map._panes && map._panes.overlayPane.firstChild) {
-        layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
+
+    // If overlayPane has childNodes, it will iterates over all of them
+    if (map._panes && map._panes.overlayPane.childNodes){
+        for(var i = 0; i < map._panes.overlayPane.childNodes.length; i++){
+            layerQueue.defer(handlePathRoot, map._panes.overlayPane.childNodes[i]);
+        }
     }
+
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
 
@@ -174,7 +177,7 @@ module.exports = function leafletImage(map, callback) {
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        ctx.drawImage(root, pos.x, pos.y);
+        ctx.drawImage(root, pos.x, pos.y, root.width, root.height);
         callback(null, {
             canvas: canvas
         });
