@@ -214,6 +214,18 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        // If it's a data URL we don't want to touch this.
+        if (isDataURL(url)) {
+            return url;
+        }
+        else {
+            return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        }
     }
+
+    function isDataURL(url) {
+        var dataURLRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+        return !!url.match(dataURLRegex);
+    }
+
 };
