@@ -1,5 +1,4 @@
-(function(e){if("function"==typeof bootstrap)bootstrap("leafletimage",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeLeafletImage=e}else"undefined"!=typeof window?window.leafletImage=e():global.leafletImage=e()})(function(){var define,ses,bootstrap,module,exports;
-return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.leafletImage = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var queue = require('./queue');
 
 // leaflet-image
@@ -196,8 +195,8 @@ module.exports = function leafletImage(map, callback) {
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
-        var x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y;
+        var x = Math.round(pos.x - size[0] + anchor.x),
+            y = Math.round(pos.y - anchor.y);
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
@@ -216,8 +215,20 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        // If it's a data URL we don't want to touch this.
+        if (isDataURL(url)) {
+            return url;
+        }
+        else {
+            return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        }
     }
+
+    function isDataURL(url) {
+        var dataURLRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+        return !!url.match(dataURLRegex);
+    }
+
 };
 
 },{"./queue":2}],2:[function(require,module,exports){
@@ -301,7 +312,5 @@ module.exports = function leafletImage(map, callback) {
   function noop() {}
 })();
 
-},{}]},{},[1])
-(1)
+},{}]},{},[1])(1)
 });
-;
