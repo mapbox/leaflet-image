@@ -194,8 +194,8 @@ module.exports = function leafletImage(map, callback) {
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
-        var x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y;
+        var x = Math.round(pos.x - size[0] + anchor.x),
+            y = Math.round(pos.y - anchor.y);
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
