@@ -27,8 +27,9 @@ module.exports = function leafletImage(map, callback) {
     map.eachLayer(drawTileLayer);
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
-    } else if (map._panes && map._panes.overlayPane.firstChild) {
-        layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
+    } else if (map._panes) {
+      var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+      if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
@@ -59,7 +60,8 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handleTileLayer(layer, callback) {
-        var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
+        // `L.TileLayer.Canvas` was removed in leaflet 1.0
+        var isCanvasLayer = (L.TileLayer.Canvas && layer instanceof L.TileLayer.Canvas),
             canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
@@ -174,7 +176,7 @@ module.exports = function leafletImage(map, callback) {
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        ctx.drawImage(root, pos.x, pos.y);
+        ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
         callback(null, {
             canvas: canvas
         });
