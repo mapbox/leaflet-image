@@ -10,8 +10,10 @@ Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
   don't, so they aren't supported.
 * Your browser must support [CORS](http://caniuse.com/#feat=cors) and [Canvas](http://caniuse.com/#feat=canvas),
   so `IE >= 10` with no exceptions.
-* You must set `L_PREFER_CANVAS = true;` so that vector layers are drawn in Canvas
-  rather than SVG or VML.
+* __(Leaflet < 1.0.0)__ You must set `L_PREFER_CANVAS = true;` so that vector
+  layers are drawn in Canvas
+* __(Leaflet >= 1.0.0)__ You must set `renderer: L.canvas()` for any layer that
+  you want included in the generated image.
 * This library **does not rasterize HTML** because **browsers cannot rasterize HTML**. Therefore,
   L.divIcon and other HTML-based features of a map, like zoom controls or legends, are not
   included in the output, because they are HTML.
