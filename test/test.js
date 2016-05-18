@@ -5,7 +5,8 @@ var pixelmatch = require('pixelmatch');
 var fs = require('fs');
 var Pageres = require('pageres');
 
-['simple', 'circle-marker', 'osm', 'one-point-oh', 'style-layer', 'no-tiles'].forEach(name => {
+['simple', 'circle-marker', 'osm', 'one-point-oh',
+    'style-layer', 'no-tiles', 'wms'].forEach(name => {
     test(name, t => {
         const pageres = new Pageres({ delay: 5 })
             .src(path.join(__dirname, 'pages/', name + '.html'), ['400x400'])

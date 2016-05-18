@@ -7,6 +7,8 @@ var cacheBusterDate = +new Date();
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
 
+    var hasMapbox = !L.mapbox;
+
     var dimensions = map.getSize(),
         layerQueue = new queue(1);
 
@@ -78,7 +80,8 @@ module.exports = function leafletImage(map, callback) {
         if (zoom > layer.options.maxZoom ||
             zoom < layer.options.minZoom ||
             // mapbox.tileLayer
-            (layer.options.format && !layer.options.tiles)) {
+            (hasMapbox &&
+                layer instanceof L.mapbox.tileLayer && !layer.options.tiles)) {
             return callback();
         }
 
