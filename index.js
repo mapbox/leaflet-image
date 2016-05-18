@@ -172,10 +172,14 @@ module.exports = function leafletImage(map, callback) {
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
-        callback(null, {
-            canvas: canvas
-        });
+        try {
+            ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
+            callback(null, {
+                canvas: canvas
+            });
+        } catch(e) {
+            console.error('Element could not be drawn on canvas', root);
+        }
     }
 
     function handleMarkerLayer(marker, callback) {
