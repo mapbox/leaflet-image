@@ -1,5 +1,7 @@
 ## leaflet-image
 
+[![CircleCI](https://circleci.com/gh/mapbox/leaflet-image/tree/gh-pages.svg?style=svg)](https://circleci.com/gh/mapbox/leaflet-image/tree/gh-pages)
+
 Export images out of Leaflet maps without a server component, by using
 Canvas and [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
