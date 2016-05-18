@@ -2,6 +2,8 @@
 
 var queue = require('./queue');
 
+var cacheBusterDate = +new Date();
+
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
 
@@ -216,9 +218,7 @@ module.exports = function leafletImage(map, callback) {
         if (isDataURL(url)) {
             return url;
         }
-        else {
-            return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
-        }
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;
     }
 
     function isDataURL(url) {
