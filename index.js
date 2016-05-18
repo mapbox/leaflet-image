@@ -181,7 +181,7 @@ module.exports = function leafletImage(map, callback) {
                 canvas: canvas
             });
         } catch(e) {
-            console.error('Element could not be drawn on canvas', root);
+            console.error('Element could not be drawn on canvas', root); // eslint-disable-line no-console
         }
     }
 
