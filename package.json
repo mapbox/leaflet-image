@@ -4,7 +4,8 @@
   "description": "export leaflet maps as images",
   "main": "index.js",
   "scripts": {
-    "make": "browserify -s leafletImage index.js > leaflet-image.js"
+    "make": "browserify -s leafletImage index.js > leaflet-image.js",
+    "test": "eslint index.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,7 @@
     "url": "https://github.com/mapbox/leaflet-image/issues"
   },
   "devDependencies": {
-    "browserify": "~2.32.2"
+    "browserify": "~13.0.1",
+    "eslint": "2.10.2"
   }
 }

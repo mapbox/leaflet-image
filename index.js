@@ -1,3 +1,5 @@
+/* global L */
+
 var queue = require('./queue');
 
 // leaflet-image
@@ -26,8 +28,8 @@ module.exports = function leafletImage(map, callback) {
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
-      var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-      if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
@@ -49,7 +51,7 @@ module.exports = function leafletImage(map, callback) {
 
     function layersDone(err, layers) {
         if (err) throw err;
-        layers.forEach(function(layer) {
+        layers.forEach(function (layer) {
             if (layer && layer.canvas) {
                 ctx.drawImage(layer.canvas, 0, 0);
             }
@@ -78,17 +80,11 @@ module.exports = function leafletImage(map, callback) {
             return callback();
         }
 
-        var offset = new L.Point(
-            ((origin.x / tileSize) - Math.floor(origin.x / tileSize)) * tileSize,
-            ((origin.y / tileSize) - Math.floor(origin.y / tileSize)) * tileSize
-        );
-
         var tileBounds = L.bounds(
             bounds.min.divideBy(tileSize)._floor(),
             bounds.max.divideBy(tileSize)._floor()),
             tiles = [],
-            center = tileBounds.getCenter(),
-            j, i, point,
+            j, i,
             tileQueue = new queue(1);
 
         for (j = tileBounds.min.y; j <= tileBounds.max.y; j++) {
@@ -97,7 +93,7 @@ module.exports = function leafletImage(map, callback) {
             }
         }
 
-        tiles.forEach(function(tilePoint) {
+        tiles.forEach(function (tilePoint) {
             var originalTilePoint = tilePoint.clone();
 
             if (layer._adjustTilePoint) {
@@ -132,14 +128,14 @@ module.exports = function leafletImage(map, callback) {
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
             im.crossOrigin = '';
-            im.onload = function() {
+            im.onload = function () {
                 callback(null, {
                     img: this,
                     pos: tilePos,
                     size: tileSize
                 });
             };
-            im.onerror = function(e) {
+            im.onerror = function (e) {
                 // use canvas instead of errorTileUrl if errorTileUrl get 404
                 if (layer.options.errorTileUrl != '' && e.target.errorCheck === undefined) {
                     e.target.errorCheck = true;
@@ -203,7 +199,7 @@ module.exports = function leafletImage(map, callback) {
         canvas.height = dimensions.y;
         im.crossOrigin = '';
 
-        im.onload = function() {
+        im.onload = function () {
             ctx.drawImage(this, x, y, size[0], size[1]);
             callback(null, {
                 canvas: canvas
