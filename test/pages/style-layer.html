@@ -1,0 +1,34 @@
+<head>
+<script>L_PREFER_CANVAS = true;</script>
+<script src='https://api.tiles.mapbox.com/mapbox.js/v2.4.0/mapbox.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.4.0/mapbox.css' rel='stylesheet' />
+<link href='./shared/style.css' rel='stylesheet' />
+</head>
+<body>
+<div id='snapshot'></div>
+<div id='map'></div>
+<script src='../../leaflet-image.js'></script>
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoidG1jdyIsImEiOiJIZmRUQjRBIn0.lRARalfaGHnPdRcc-7QZYQ';
+L.mapbox.config.FORCE_HTTPS = true;
+var snapshot = document.getElementById('snapshot');
+var map = L.map('map')
+  .setView([38.88995, -77.00906], 15);
+L.mapbox.styleLayer('mapbox://styles/mapbox/streets-v8').addTo(map);
+
+setTimeout(function() {
+  leafletImage(map, doImage);
+}, 2000);
+
+function doImage(err, canvas) {
+  var img = document.createElement('img');
+  var dimensions = map.getSize();
+  img.width = dimensions.x;
+  img.height = dimensions.y;
+  img.src = canvas.toDataURL();
+  snapshot.innerHTML = '';
+  snapshot.appendChild(img);
+}
+</script>
+</body>
+</html>

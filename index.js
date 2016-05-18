@@ -1,6 +1,6 @@
 /* global L */
 
-var queue = require('./queue');
+var queue = require('d3-queue').queue;
 
 var cacheBusterDate = +new Date();
 
@@ -219,7 +219,7 @@ module.exports = function leafletImage(map, callback) {
 
     function addCacheString(url) {
         // If it's a data URL we don't want to touch this.
-        if (isDataURL(url)) {
+        if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
             return url;
         }
         return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;

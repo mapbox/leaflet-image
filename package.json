@@ -30,5 +30,8 @@
     "pageres": "4.1.2",
     "pixelmatch": "4.0.1",
     "tape": "4.5.1"
+  },
+  "dependencies": {
+    "d3-queue": "2.0.3"
   }
 }
