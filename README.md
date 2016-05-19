@@ -25,6 +25,7 @@ __For Leaflet >= 1.0.0__: You must set `renderer: L.canvas()` for any layer that
 ## Plugins that will _not_ work with leaflet-image
 
 * Leaflet.label: will not work because it uses HTML to display labels.
+* Leaflet.markercluster: will not work because it uses HTML for clusters.
 
 ### Usage
 
