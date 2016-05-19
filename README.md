@@ -21,6 +21,10 @@ __For Leaflet < 1.0.0__: You must set `L_PREFER_CANVAS = true;` so that vector
   
 __For Leaflet >= 1.0.0__: You must set `renderer: L.canvas()` for any layer that
   you want included in the generated image. You can also set this by setting [`preferCanvas: true`](http://leafletjs.com/reference-1.0.0.html#map-prefercanvas) in your map's options.
+  
+## Plugins that will _not_ work with leaflet-image
+
+* Leaflet.label: will not work because it uses HTML to display labels.
 
 ### Usage
 
