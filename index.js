@@ -7,7 +7,7 @@ var cacheBusterDate = +new Date();
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
 
-    var hasMapbox = !L.mapbox;
+    var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
         layerQueue = new queue(1);

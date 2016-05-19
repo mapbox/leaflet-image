@@ -8,7 +8,7 @@ var cacheBusterDate = +new Date();
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
 
-    var hasMapbox = !L.mapbox;
+    var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
         layerQueue = new queue(1);
@@ -182,7 +182,7 @@ module.exports = function leafletImage(map, callback) {
                 canvas: canvas
             });
         } catch(e) {
-            console.error('Element could not be drawn on canvas', root);
+            console.error('Element could not be drawn on canvas', root); // eslint-disable-line no-console
         }
     }
 
