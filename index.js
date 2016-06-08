@@ -65,7 +65,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
         });
         layers.forEach(function (layer) {
             if (layer && layer.img && !layer.canvas) {
-                 ctx.drawImage(layer.img, 0, 0);
+                ctx.drawImage(layer.img, 0, 0);
             }
         });
         done();
@@ -232,7 +232,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
                 getBase64(url, function (data) {
                     im.src = imageCache[marker._icon.src] = 'data: image/png;base64, ' + data;
                     if (!loaded) {
-                        setTimeout(function() {
+                        setTimeout(function () {
                             im.onload();
                         },0);
                     }
@@ -240,7 +240,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
             } else {
                 im.src = cache;
                 if (!loaded) {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         im.onload();
                     },0);
                 }
@@ -273,7 +273,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
         var request = new XMLHttpRequest();
         request.open('GET', url, true);
         request.responseType = 'arraybuffer';
-        request.onload = function() {
+        request.onload = function () {
             if (request.status >= 200 && request.status < 400) {
                 var buffer = this.response,
                     binary = '',
@@ -296,6 +296,6 @@ module.exports = function leafletImage(map, callback, useAjax) {
             callback(null, {
                 img: img
             });
-        })
+        });
     }
 };
