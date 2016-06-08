@@ -1,4 +1,4 @@
-/* global L */
+/* global L, Uint8Array */
 
 var queue = require('d3-queue').queue;
 
