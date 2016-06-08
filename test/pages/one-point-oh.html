@@ -1,0 +1,34 @@
+<head>
+<script>L_PREFER_CANVAS = true;</script>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v1.0.0-rc.1/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet/v1.0.0-rc.1/leaflet.js"></script>
+<link href='./shared/style.css' rel='stylesheet' />
+</head>
+<body>
+<div id='snapshot'></div>
+<div id='map'></div>
+<script src='../../leaflet-image.js'></script>
+<script>
+var snapshot = document.getElementById('snapshot');
+var map = L.map('map')
+  .setView([38.88995, -77.00906], 15);
+L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+setTimeout(function() {
+  leafletImage(map, doImage);
+}, 2000);
+
+function doImage(err, canvas) {
+  var img = document.createElement('img');
+  var dimensions = map.getSize();
+  img.width = dimensions.x;
+  img.height = dimensions.y;
+  img.src = canvas.toDataURL();
+  snapshot.innerHTML = '';
+  snapshot.appendChild(img);
+}
+</script>
+</body>
+</html>

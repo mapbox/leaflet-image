@@ -1,7 +1,13 @@
-var queue = require('./queue');
+/* global L */
+
+var queue = require('d3-queue').queue;
+
+var cacheBusterDate = +new Date();
 
 // leaflet-image
 module.exports = function leafletImage(map, callback, useAjax) {
+
+    var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
         layerQueue = new queue(1),
@@ -26,10 +32,11 @@ module.exports = function leafletImage(map, callback, useAjax) {
     map.eachLayer(drawTileLayer);
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
-    } else if (map._panes && map._panes.overlayPane.firstChild) {
-        layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
+    } else if (map._panes) {
+        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
     }
-    map.eachLayer(drawLayer);
+    map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
 
     function drawTileLayer(l) {
@@ -37,7 +44,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
 
-    function drawLayer(l) {
+    function drawMarkerLayer(l) {
         if (l instanceof L.Marker && l.options.icon instanceof L.Icon) {
             layerQueue.defer(handleMarkerLayer, l);
         } else if (typeof l.redraw === 'function' && l.canvas) {
@@ -51,7 +58,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
 
     function layersDone(err, layers) {
         if (err) throw err;
-        layers.forEach(function(layer) {
+        layers.forEach(function (layer) {
             if (layer && layer.canvas) {
                 ctx.drawImage(layer.canvas, 0, 0);
             }
@@ -65,7 +72,8 @@ module.exports = function leafletImage(map, callback, useAjax) {
     }
 
     function handleTileLayer(layer, callback) {
-        var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
+        // `L.TileLayer.Canvas` was removed in leaflet 1.0
+        var isCanvasLayer = (L.TileLayer.Canvas && layer instanceof L.TileLayer.Canvas),
             canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
@@ -80,21 +88,16 @@ module.exports = function leafletImage(map, callback, useAjax) {
         if (zoom > layer.options.maxZoom ||
             zoom < layer.options.minZoom ||
             // mapbox.tileLayer
-            (layer.options.format && !layer.options.tiles)) {
+            (hasMapbox &&
+                layer instanceof L.mapbox.tileLayer && !layer.options.tiles)) {
             return callback();
         }
-
-        var offset = new L.Point(
-            ((origin.x / tileSize) - Math.floor(origin.x / tileSize)) * tileSize,
-            ((origin.y / tileSize) - Math.floor(origin.y / tileSize)) * tileSize
-        );
 
         var tileBounds = L.bounds(
             bounds.min.divideBy(tileSize)._floor(),
             bounds.max.divideBy(tileSize)._floor()),
             tiles = [],
-            center = tileBounds.getCenter(),
-            j, i, point,
+            j, i,
             tileQueue = new queue(1);
 
         for (j = tileBounds.min.y; j <= tileBounds.max.y; j++) {
@@ -103,7 +106,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
             }
         }
 
-        tiles.forEach(function(tilePoint) {
+        tiles.forEach(function (tilePoint) {
             var originalTilePoint = tilePoint.clone();
 
             if (layer._adjustTilePoint) {
@@ -138,14 +141,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
             im.crossOrigin = '';
-            im.onload = function() {
+            im.onload = function () {
                 callback(null, {
                     img: this,
                     pos: tilePos,
                     size: tileSize
                 });
             };
-            im.onerror = function(e) {
+            im.onerror = function (e) {
                 // use canvas instead of errorTileUrl if errorTileUrl get 404
                 if (layer.options.errorTileUrl != '' && e.target.errorCheck === undefined) {
                     e.target.errorCheck = true;
@@ -180,10 +183,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        ctx.drawImage(root, pos.x, pos.y);
-        callback(null, {
-            canvas: canvas
-        });
+        try {
+            ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
+            callback(null, {
+                canvas: canvas
+            });
+        } catch(e) {
+            console.error('Element could not be drawn on canvas', root); // eslint-disable-line no-console
+        }
     }
 
     function handleMarkerLayer(marker, callback) {
@@ -204,14 +211,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
-        var x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y;
+        var x = Math.round(pos.x - size[0] + anchor.x),
+            y = Math.round(pos.y - anchor.y);
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         im.crossOrigin = '';
 
-        im.onload = function() {
+        im.onload = function () {
             if (loaded) return;
             loaded = true;
             ctx.drawImage(this, x, y, size[0], size[1]);
@@ -250,9 +257,18 @@ module.exports = function leafletImage(map, callback, useAjax) {
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        // If it's a data URL we don't want to touch this.
+        if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
+            return url;
+        }
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;
     }
 
+    function isDataURL(url) {
+        var dataURLRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+        return !!url.match(dataURLRegex);
+    }
+  
     function getBase64(url, callback) {
         var request = new XMLHttpRequest();
         request.open('GET', url, true);

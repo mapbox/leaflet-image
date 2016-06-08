@@ -1,12 +1,17 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.leafletImage = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var queue = require('./queue');
+/* global L */
+
+var queue = require('d3-queue').queue;
+
+var cacheBusterDate = +new Date();
 
 // leaflet-image
-module.exports = function leafletImage(map, callback, useAjax) {
+module.exports = function leafletImage(map, callback) {
+
+    var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
-        layerQueue = new queue(1),
-        imageCache = {};
+        layerQueue = new queue(1);
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -27,10 +32,11 @@ module.exports = function leafletImage(map, callback, useAjax) {
     map.eachLayer(drawTileLayer);
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
-    } else if (map._panes && map._panes.overlayPane.firstChild) {
-        layerQueue.defer(handlePathRoot, map._panes.overlayPane.firstChild);
+    } else if (map._panes) {
+        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
     }
-    map.eachLayer(drawLayer);
+    map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
 
     function drawTileLayer(l) {
@@ -38,11 +44,9 @@ module.exports = function leafletImage(map, callback, useAjax) {
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
 
-    function drawLayer(l) {
+    function drawMarkerLayer(l) {
         if (l instanceof L.Marker && l.options.icon instanceof L.Icon) {
             layerQueue.defer(handleMarkerLayer, l);
-        } else if (typeof l.redraw === 'function' && l.canvas) {
-            layerQueue.defer(handleCanvasLayer, l);
         }
     }
 
@@ -52,21 +56,17 @@ module.exports = function leafletImage(map, callback, useAjax) {
 
     function layersDone(err, layers) {
         if (err) throw err;
-        layers.forEach(function(layer) {
+        layers.forEach(function (layer) {
             if (layer && layer.canvas) {
                 ctx.drawImage(layer.canvas, 0, 0);
-            }
-        });
-        layers.forEach(function (layer) {
-            if (layer && layer.img && !layer.canvas) {
-                 ctx.drawImage(layer.img, 0, 0);
             }
         });
         done();
     }
 
     function handleTileLayer(layer, callback) {
-        var isCanvasLayer = (layer instanceof L.TileLayer.Canvas),
+        // `L.TileLayer.Canvas` was removed in leaflet 1.0
+        var isCanvasLayer = (L.TileLayer.Canvas && layer instanceof L.TileLayer.Canvas),
             canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
@@ -81,21 +81,16 @@ module.exports = function leafletImage(map, callback, useAjax) {
         if (zoom > layer.options.maxZoom ||
             zoom < layer.options.minZoom ||
             // mapbox.tileLayer
-            (layer.options.format && !layer.options.tiles)) {
+            (hasMapbox &&
+                layer instanceof L.mapbox.tileLayer && !layer.options.tiles)) {
             return callback();
         }
-
-        var offset = new L.Point(
-            ((origin.x / tileSize) - Math.floor(origin.x / tileSize)) * tileSize,
-            ((origin.y / tileSize) - Math.floor(origin.y / tileSize)) * tileSize
-        );
 
         var tileBounds = L.bounds(
             bounds.min.divideBy(tileSize)._floor(),
             bounds.max.divideBy(tileSize)._floor()),
             tiles = [],
-            center = tileBounds.getCenter(),
-            j, i, point,
+            j, i,
             tileQueue = new queue(1);
 
         for (j = tileBounds.min.y; j <= tileBounds.max.y; j++) {
@@ -104,7 +99,7 @@ module.exports = function leafletImage(map, callback, useAjax) {
             }
         }
 
-        tiles.forEach(function(tilePoint) {
+        tiles.forEach(function (tilePoint) {
             var originalTilePoint = tilePoint.clone();
 
             if (layer._adjustTilePoint) {
@@ -139,14 +134,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
         function loadTile(url, tilePos, tileSize, callback) {
             var im = new Image();
             im.crossOrigin = '';
-            im.onload = function() {
+            im.onload = function () {
                 callback(null, {
                     img: this,
                     pos: tilePos,
                     size: tileSize
                 });
             };
-            im.onerror = function(e) {
+            im.onerror = function (e) {
                 // use canvas instead of errorTileUrl if errorTileUrl get 404
                 if (layer.options.errorTileUrl != '' && e.target.errorCheck === undefined) {
                     e.target.errorCheck = true;
@@ -181,10 +176,14 @@ module.exports = function leafletImage(map, callback, useAjax) {
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        ctx.drawImage(root, pos.x, pos.y);
-        callback(null, {
-            canvas: canvas
-        });
+        try {
+            ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
+            callback(null, {
+                canvas: canvas
+            });
+        } catch(e) {
+            console.error('Element could not be drawn on canvas', root); // eslint-disable-line no-console
+        }
     }
 
     function handleMarkerLayer(marker, callback) {
@@ -194,177 +193,168 @@ module.exports = function leafletImage(map, callback, useAjax) {
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
             isBase64 = /^data\:/.test(marker._icon.src),
-            cache = imageCache[marker._icon.src],
             url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
-            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
-            loaded = false;
+            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true));
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
-        var x = pos.x - size[0] + anchor.x,
-            y = pos.y - anchor.y;
+        var x = Math.round(pos.x - size[0] + anchor.x),
+            y = Math.round(pos.y - anchor.y);
 
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         im.crossOrigin = '';
 
-        im.onload = function() {
-            if (loaded) return;
-            loaded = true;
+        im.onload = function () {
             ctx.drawImage(this, x, y, size[0], size[1]);
             callback(null, {
                 canvas: canvas
             });
         };
 
-        if (useAjax && !isBase64) {
-            if (cache === undefined) {
-                getBase64(url, function (data) {
-                    im.src = imageCache[marker._icon.src] = 'data: image/png;base64, ' + data;
-                    if (!loaded) {
-                        setTimeout(function() {
-                            im.onload();
-                        },0);
-                    }
-                });
-            } else {
-                im.src = cache;
-                if (!loaded) {
-                    setTimeout(function() {
-                        im.onload();
-                    },0);
-                }
-            }
-        } else {
-            im.src = url;
+        im.src = url;
 
-            if (isBase64 && !loaded) {
-                setTimeout(function () {
-                    im.onload();
-                }, 0);
-            }
-        }
+        if (isBase64) im.onload();
     }
 
     function addCacheString(url) {
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + (+new Date());
+        // If it's a data URL we don't want to touch this.
+        if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
+            return url;
+        }
+        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;
     }
 
-    function getBase64(url, callback) {
-        var request = new XMLHttpRequest();
-        request.open('GET', url, true);
-        request.responseType = 'arraybuffer';
-        request.onload = function() {
-            if (request.status >= 200 && request.status < 400) {
-                var buffer = this.response,
-                    binary = '',
-                    bytes = new Uint8Array(buffer),
-                    len = bytes.byteLength;
+    function isDataURL(url) {
+        var dataURLRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
+        return !!url.match(dataURLRegex);
+    }
 
-                for (var i = 0; i < len; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
-                callback(btoa(binary));
-            }
-        };
-        request.send();
-    }
-	
-    function handleCanvasLayer(l, callback) {
-        l.redraw(function () {
-            var img = new Image();
-            img.src = l.canvas.toDataURL();
-            callback(null, {
-                img: img
-            });
-        })
-    }
 };
 
-},{"./queue":2}],2:[function(require,module,exports){
-(function() {
-  if (typeof module === "undefined") self.queue = queue;
-  else module.exports = queue;
-  queue.version = "1.0.4";
+},{"d3-queue":2}],2:[function(require,module,exports){
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (factory((global.d3_queue = global.d3_queue || {})));
+}(this, function (exports) { 'use strict';
+
+  var version = "2.0.3";
 
   var slice = [].slice;
 
-  function queue(parallelism) {
-    var q,
-        tasks = [],
-        started = 0, // number of tasks that have been started (and perhaps finished)
-        active = 0, // number of tasks currently being executed (started but not finished)
-        remaining = 0, // number of tasks not yet finished
-        popping, // inside a synchronous task callback?
-        error = null,
-        await = noop,
-        all;
+  var noabort = {};
 
-    if (!parallelism) parallelism = Infinity;
+  function Queue(size) {
+    if (!(size >= 1)) throw new Error;
+    this._size = size;
+    this._call =
+    this._error = null;
+    this._tasks = [];
+    this._data = [];
+    this._waiting =
+    this._active =
+    this._ended =
+    this._start = 0; // inside a synchronous task callback?
+  }
 
-    function pop() {
-      while (popping = started < tasks.length && active < parallelism) {
-        var i = started++,
-            t = tasks[i],
-            a = slice.call(t, 1);
-        a.push(callback(i));
-        ++active;
-        t[0].apply(null, a);
-      }
+  Queue.prototype = queue.prototype = {
+    constructor: Queue,
+    defer: function(callback) {
+      if (typeof callback !== "function" || this._call) throw new Error;
+      if (this._error != null) return this;
+      var t = slice.call(arguments, 1);
+      t.push(callback);
+      ++this._waiting, this._tasks.push(t);
+      poke(this);
+      return this;
+    },
+    abort: function() {
+      if (this._error == null) abort(this, new Error("abort"));
+      return this;
+    },
+    await: function(callback) {
+      if (typeof callback !== "function" || this._call) throw new Error;
+      this._call = function(error, results) { callback.apply(null, [error].concat(results)); };
+      maybeNotify(this);
+      return this;
+    },
+    awaitAll: function(callback) {
+      if (typeof callback !== "function" || this._call) throw new Error;
+      this._call = callback;
+      maybeNotify(this);
+      return this;
     }
+  };
 
-    function callback(i) {
-      return function(e, r) {
-        --active;
-        if (error != null) return;
-        if (e != null) {
-          error = e; // ignore new tasks and squelch active callbacks
-          started = remaining = NaN; // stop queued tasks from starting
-          notify();
-        } else {
-          tasks[i] = r;
-          if (--remaining) popping || pop();
-          else notify();
-        }
-      };
+  function poke(q) {
+    if (!q._start) try { start(q); } // let the current task complete
+    catch (e) { if (q._tasks[q._ended + q._active - 1]) abort(q, e); } // task errored synchronously
+  }
+
+  function start(q) {
+    while (q._start = q._waiting && q._active < q._size) {
+      var i = q._ended + q._active,
+          t = q._tasks[i],
+          j = t.length - 1,
+          c = t[j];
+      t[j] = end(q, i);
+      --q._waiting, ++q._active;
+      t = c.apply(null, t);
+      if (!q._tasks[i]) continue; // task finished synchronously
+      q._tasks[i] = t || noabort;
     }
+  }
 
-    function notify() {
-      if (error != null) await(error);
-      else if (all) await(error, tasks);
-      else await.apply(null, [error].concat(tasks));
-    }
-
-    return q = {
-      defer: function() {
-        if (!error) {
-          tasks.push(arguments);
-          ++remaining;
-          pop();
-        }
-        return q;
-      },
-      await: function(f) {
-        await = f;
-        all = false;
-        if (!remaining) notify();
-        return q;
-      },
-      awaitAll: function(f) {
-        await = f;
-        all = true;
-        if (!remaining) notify();
-        return q;
+  function end(q, i) {
+    return function(e, r) {
+      if (!q._tasks[i]) return; // ignore multiple callbacks
+      --q._active, ++q._ended;
+      q._tasks[i] = null;
+      if (q._error != null) return; // ignore secondary errors
+      if (e != null) {
+        abort(q, e);
+      } else {
+        q._data[i] = r;
+        if (q._waiting) poke(q);
+        else maybeNotify(q);
       }
     };
   }
 
-  function noop() {}
-})();
+  function abort(q, e) {
+    var i = q._tasks.length, t;
+    q._error = e; // ignore active callbacks
+    q._data = undefined; // allow gc
+    q._waiting = NaN; // prevent starting
 
+    while (--i >= 0) {
+      if (t = q._tasks[i]) {
+        q._tasks[i] = null;
+        if (t.abort) try { t.abort(); }
+        catch (e) { /* ignore */ }
+      }
+    }
+
+    q._active = NaN; // allow notification
+    maybeNotify(q);
+  }
+
+  function maybeNotify(q) {
+    if (!q._active && q._call) q._call(q._error, q._data);
+  }
+
+  function queue(concurrency) {
+    return new Queue(arguments.length ? +concurrency : Infinity);
+  }
+
+  exports.version = version;
+  exports.queue = queue;
+
+}));
 },{}]},{},[1])(1)
 });
