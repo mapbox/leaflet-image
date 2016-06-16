@@ -35,9 +35,8 @@
 <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.0/leaflet-heat.js'></script>
 <script src='leaflet-image.js'></script>
 <script>
-L.mapbox.accessToken = 'pk.eyJ1IjoidG1jdyIsImEiOiJIZmRUQjRBIn0.lRARalfaGHnPdRcc-7QZYQ';
 var snapshot = document.getElementById('snapshot');
-var map = L.mapbox.map('map', 'mapbox.streets')
+var map = L.mapbox.map('map')
   .setView([38.88995, -77.00906], 15);
 
 document.getElementById('snap').addEventListener('click', function() {
