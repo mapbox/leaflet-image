@@ -105,9 +105,14 @@ module.exports = function leafletImage(map, callback) {
                 layer._adjustTilePoint(tilePoint);
             }
 
-            var tilePos = layer._getTilePos(originalTilePoint)
-                .subtract(bounds.min)
-                .add(origin);
+            // `layer._getTilePos()` internally uses `layer._level.origin`,
+            // but `map.getPixelOrigin()` is not always equal to 
+            // `layer._level.origin` when map is being zoomed.
+            // by <https://github.com/MichaelHu>
+            var tilePos = originalTilePoint
+                    .scaleBy(new L.Point(tileSize, tileSize))
+                    .subtract(bounds.min)
+                    ;
 
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
