@@ -82,7 +82,9 @@ var leafletImage =
 	        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
 	        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
 	    }
+
 	    map.eachLayer(drawMarkerLayer);
+	    map.eachLayer(drawSophonMarkerLayer);
 	    layerQueue.awaitAll(layersDone);
 
 	    function drawTileLayer(l) {
@@ -93,6 +95,12 @@ var leafletImage =
 	    function drawMarkerLayer(l) {
 	        if (l instanceof L.Marker && l.options.icon instanceof L.Icon) {
 	            layerQueue.defer(handleMarkerLayer, l);
+	        }
+	    }
+
+	    function drawSophonMarkerLayer(l) {
+	        if (L.Marker.isSophonPoint(l)) {
+	            layerQueue.defer(handleSophonMarker, l);
 	        }
 	    }
 
@@ -238,6 +246,55 @@ var leafletImage =
 	    }
 
 	    function handleMarkerLayer(marker, callback) {
+	        var icon = marker._icon;
+	        if(icon.src){
+	            handleImageMarker.apply(null, arguments);
+	        }
+	        else {
+	            callback(null);
+	        }
+	    }
+
+	    function handleSophonMarker(marker, callback) {
+	        var pixelPoint = map.project(marker.getLatLng())
+	            , ele = marker.getElement()
+	            , canvas = document.createElement('canvas')
+	            , ctx = canvas.getContext('2d')
+	            , pixelBounds = map.getPixelBounds()
+	            , minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y)
+	            , pos = pixelPoint.subtract(minPoint)
+	            , styles = window.getComputedStyle(ele)
+	            ;
+
+	        canvas.width = dimensions.x;
+	        canvas.height = dimensions.y;
+
+	        // console.log(ele.style.transform);
+	        // console.log(window.getComputedStyle(ele));
+	        // console.log(pos);
+	        ctx.save();
+	        ctx.strokeStyle = styles['border-color'];
+	        ctx.lineWidth = 0.5; 
+	        ctx.beginPath();
+	        ctx.arc(
+	            pos.x
+	            , pos.y
+	            , parseInt(styles['height']) / 2
+	            , 0
+	            , 2 * Math.PI
+	            , true
+	        );
+	        ctx.stroke();
+	        ctx.fillStyle = styles['background-color'];
+	        ctx.fill();
+	        ctx.restore();
+
+	        callback(null, {
+	            canvas: canvas
+	        });
+	    }
+
+	    function handleImageMarker(marker, callback){
 	        var canvas = document.createElement('canvas'),
 	            ctx = canvas.getContext('2d'),
 	            pixelBounds = map.getPixelBounds(),
