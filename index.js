@@ -200,7 +200,7 @@ module.exports = function leafletImage(map, callback) {
 
     function handleMarkerLayer(marker, callback) {
         var icon = marker._icon;
-        if(icon.src){
+        if(icon && icon.src){
             handleImageMarker.apply(null, arguments);
         }
         else {
@@ -209,6 +209,7 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handleSophonMarker(marker, callback) {
+        if (!marker.getElement()) return;
         var pixelPoint = map.project(marker.getLatLng())
             , ele = marker.getElement()
             , canvas = document.createElement('canvas')
