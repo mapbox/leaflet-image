@@ -51,7 +51,9 @@ module.exports = function leafletImage(map, callback) {
         }
     }
     
-    function drawEsriDynamicLayer(l) { 
+    function drawEsriDynamicLayer(l) {
+        if (!L.esri) return;
+        
         if (l instanceof L.esri.DynamicMapLayer) {                       
             layerQueue.defer(handleEsriDymamicLayer, l);
         }
