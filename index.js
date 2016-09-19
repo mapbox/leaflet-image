@@ -37,8 +37,17 @@ module.exports = function leafletImage(map, callback) {
     }
 
     map.eachLayer(drawMarkerLayer);
-    map.eachLayer(drawSophonMarkerLayer);
+    // map.eachLayer(drawSophonMarkerLayer);
+    layerQueue.defer( drawSophonMarkers );
     layerQueue.awaitAll(layersDone);
+
+
+
+
+
+
+
+
 
     function drawTileLayer(l) {
         if (l instanceof L.TileLayer) layerQueue.defer(handleTileLayer, l);
@@ -198,6 +207,9 @@ module.exports = function leafletImage(map, callback) {
         }
     }
 
+
+
+
     function handleMarkerLayer(marker, callback) {
         var icon = marker._icon;
         if(icon && icon.src){
@@ -207,6 +219,10 @@ module.exports = function leafletImage(map, callback) {
             callback(null);
         }
     }
+
+
+
+
 
     function handleSophonMarker(marker, callback) {
         if (!marker.getElement()) return;
@@ -246,6 +262,70 @@ module.exports = function leafletImage(map, callback) {
         callback(null, {
             canvas: canvas
         });
+    }
+
+    function drawSophonMarkers( callback ) {
+        var markers = []
+            , pixelBounds = map.getPixelBounds()
+            , minPoint = new L.Point( pixelBounds.min.x, pixelBounds.min.y )
+            ;
+
+        map.eachLayer( function( marker ) {
+            if (L.Marker.isSophonPoint( marker )) {
+                var ele = marker.getElement();
+
+                if ( !ele ) {
+                    return;
+                }
+
+                var pixelPoint = map.project(marker.getLatLng())
+                    , styles = window.getComputedStyle( ele )
+                    , pos = pixelPoint.subtract(minPoint)
+                    ;
+                
+                markers.push( {
+                    pos: pos
+                    , styles: styles
+                } );
+            }
+        } );
+
+        if ( !markers.length ) {
+            return;
+        }
+
+        var canvas = document.createElement( 'canvas' )
+            , ctx = canvas.getContext( '2d' )
+            ;
+
+        canvas.width = dimensions.x;
+        canvas.height = dimensions.y;
+
+        markers.forEach( function( marker ) {
+            var pos = marker.pos
+                , styles = marker.styles
+                ;
+
+            ctx.save();
+            ctx.strokeStyle = styles['border-color'];
+            ctx.lineWidth = 0.5; 
+            ctx.beginPath();
+            ctx.arc(
+                pos.x
+                , pos.y
+                , parseInt(styles['height']) / 2
+                , 0
+                , 2 * Math.PI
+                , true
+            );
+            ctx.stroke();
+            ctx.fillStyle = styles['background-color'];
+            ctx.fill();
+            ctx.restore();
+
+        } );
+
+        callback( null, { canvas: canvas } );
     }
 
     function handleImageMarker(marker, callback){
@@ -288,7 +368,8 @@ module.exports = function leafletImage(map, callback) {
         if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
             return url;
         }
-        return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;
+        // return url + ((url.match(/\?/)) ? '&' : '?') + 'cache=' + cacheBusterDate;
+        return url;
     }
 
     function isDataURL(url) {
