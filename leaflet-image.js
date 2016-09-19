@@ -31,6 +31,7 @@ module.exports = function leafletImage(map, callback) {
     // tiles, paths, and then markers
     map.eachLayer(drawTileLayer);
     map.eachLayer(drawEsriDynamicLayer);
+    
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
@@ -51,7 +52,7 @@ module.exports = function leafletImage(map, callback) {
         }
     }
     
-    function drawEsriDynamicLayer(l) {
+     function drawEsriDynamicLayer(l) {
         if (!L.esri) return;
         
         if (l instanceof L.esri.DynamicMapLayer) {                       
