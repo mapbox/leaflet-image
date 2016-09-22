@@ -4,8 +4,9 @@ var queue = require('d3-queue').queue;
 
 var cacheBusterDate = +new Date();
 
-// leaflet-image
-module.exports = function leafletImage(map, callback) {
+var exports = {};
+
+exports.process = function(map, callback) {
 
     var hasMapbox = !!L.mapbox;
 
@@ -40,6 +41,10 @@ module.exports = function leafletImage(map, callback) {
     // map.eachLayer(drawSophonMarkerLayer);
     layerQueue.defer( drawSophonMarkers );
     layerQueue.awaitAll(layersDone);
+
+    // var __ts = +new Date();
+    // console.log( JSON.stringify( exports.getMapSnapshotInfo( map ) ) );
+    // console.log( +new Date() - __ts );
 
 
 
@@ -137,6 +142,7 @@ module.exports = function leafletImage(map, callback) {
                     tileQueue.defer(canvasTile, tile, tilePos, tileSize);
                 } else {
                     var url = addCacheString(layer.getTileUrl(tilePoint));
+                    // console.log( url, tilePoint, tilePos );
                     tileQueue.defer(loadTile, url, tilePos, tileSize);
                 }
             }
@@ -291,6 +297,7 @@ module.exports = function leafletImage(map, callback) {
         } );
 
         if ( !markers.length ) {
+            callback( null );
             return;
         }
 
@@ -378,3 +385,128 @@ module.exports = function leafletImage(map, callback) {
     }
 
 };
+
+
+
+exports.getMapSnapshotInfo = function( map ) {
+    var info = { tiles: null, markerList: [] }
+        , dimensions = map.getSize()
+        , bounds = map.getPixelBounds()
+        , zoom = map.getZoom()
+        ;
+
+    map.eachLayer( function( layer ) {
+        var markerInfo;
+
+        if ( layer instanceof L.TileLayer && !info.tiles ) {
+            info.tiles = collectTileInfo( layer );
+        }
+        else if ( layer instanceof L.Marker 
+            && layer.options.icon instanceof L.Icon ) {
+            markerInfo = collectMarkerInfo( layer );
+            if ( markerInfo ) {
+                info.markerList.push( markerInfo );
+            }
+        }
+    } );
+
+    return info;
+
+    function extractXY( url ) {
+        var xReg = /[?&]x=(\d+)/
+            , yReg = /[?&]y=(\d+)/
+            , info = {}
+            ;
+
+        info.x = xReg.test( url ) ? RegExp.$1 : '';
+        info.y = yReg.test( url ) ? RegExp.$1 : '';
+
+        if ( info.x == '' || info.y == '' ) {
+            throw new Error( 'leftlet-image-sophon: extractXY error' );
+        }
+
+        return [ info.x - 0 | 0, info.y - 0 | 0 ];
+    }
+
+    function collectTileInfo( layer ) {
+        var tileSize = layer.options.tileSize
+            , tileBounds = L.bounds(
+                bounds.min.divideBy(tileSize)._floor()
+                , bounds.max.divideBy(tileSize)._floor()
+            )
+            , leftTopTile = tileBounds.min
+            , rightBottomTile = tileBounds.max
+            , retInfo = {
+                // tileType: `Satellite` or `Normal`
+                type: map.getTileType ? map.getTileType() : 'Normal'
+                , leftTop: extractXY( layer.getTileUrl( leftTopTile ) )
+                , rightBottom: extractXY( layer.getTileUrl( rightBottomTile ) )
+                , z: zoom
+                , viewport: {
+                }
+            }
+            // viewport's top-left relative to leftTopTile's top-left 
+            , viewportLeftTop 
+            ;
+
+        viewportLeftTop = leftTopTile
+            .scaleBy( new L.Point( tileSize, tileSize ) )
+            .subtract( bounds.min )
+            .scaleBy( new L.Point( -1, -1 ) )
+            ;
+
+        retInfo.viewport.leftTop = [
+            viewportLeftTop.x - 0 | 0
+            , viewportLeftTop.y - 0 | 0
+        ];
+        retInfo.viewport.rightBottom = [
+            viewportLeftTop.x + dimensions.x - 0 | 0
+            , viewportLeftTop.y + dimensions.y - 0 | 0
+        ];
+
+        return retInfo;
+    }
+
+    function rgb2Hex( rgb ) {
+        var reg = /rgb\((\d+),(\d+),(\d+)\)/
+            , r, g, b
+            ;
+
+        if ( reg.test( rgb.replace( /\s/g, '') ) ) {
+            r = RegExp.$1;
+            g = RegExp.$2;
+            b = RegExp.$3;
+        }
+
+        return (
+            '#' 
+            + ( r - 0 ).toString( 16 )
+            + ( g - 0 ).toString( 16 )
+            + ( b - 0 ).toString( 16 )
+        );
+    }
+
+    function collectMarkerInfo( layer ) {
+        var marker = layer 
+            , ele = marker.getElement()
+            ;
+
+        if ( !ele ) {
+            return null;
+        }
+
+        var pixelPoint = map.project(marker.getLatLng())
+            , styles = window.getComputedStyle( ele )
+            , pos = pixelPoint.subtract( bounds.min )
+            ;
+        
+        return {
+            x: pos.x - 0 | 0
+            , y: pos.y - 0 | 0
+            , size: styles[ 'height' ].replace( /px/, '' ) / 2
+            , backgroundColor: rgb2Hex( styles[ 'background-color' ] )
+        };
+    }
+};
+
+module.exports = exports;
