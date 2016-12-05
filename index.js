@@ -51,9 +51,9 @@ module.exports = function leafletImage(map, callback) {
         }
     }
     
-     function drawEsriDynamicLayer(l) {
+    function drawEsriDynamicLayer(l) {
         if (!L.esri) return;
-        
+       
         if (l instanceof L.esri.DynamicMapLayer) {                       
             layerQueue.defer(handleEsriDymamicLayer, l);
         }
@@ -83,7 +83,6 @@ module.exports = function leafletImage(map, callback) {
 
         var ctx = canvas.getContext('2d'),
             bounds = map.getPixelBounds(),
-            origin = map.getPixelOrigin(),
             zoom = map.getZoom(),
             tileSize = layer.options.tileSize;
 
@@ -115,9 +114,9 @@ module.exports = function leafletImage(map, callback) {
                 layer._adjustTilePoint(tilePoint);
             }
 
-            var tilePos = layer._getTilePos(originalTilePoint)
-                .subtract(bounds.min)
-                .add(origin);
+            var tilePos = originalTilePoint
+                .scaleBy(new L.Point(tileSize, tileSize))
+                .subtract(bounds.min);
 
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
@@ -246,7 +245,7 @@ module.exports = function leafletImage(map, callback) {
             callback(null, {
                 canvas: canvas
             });
-        }
+        };
     }
 
     function addCacheString(url) {
