@@ -35,7 +35,7 @@ browserify
 
 web
 
-    curl https://raw.github.com/mapbox/leaflet-image/gh-pages/leaflet-image.js > leaflet-image.js
+    curl https://unpkg.com/leaflet-image@latest/leaflet-image.js > leaflet-image.js
 
 ### Example
 
