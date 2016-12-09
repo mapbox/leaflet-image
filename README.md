@@ -35,7 +35,7 @@ browserify
 
 web
 
-    curl https://unpkg.com/leaflet-image@latest/leaflet-image.js > leaflet-image.js
+    curl -L https://unpkg.com/leaflet-image@latest/leaflet-image.js > leaflet-image.js
 
 ### Example
 
