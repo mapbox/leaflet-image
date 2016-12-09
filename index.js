@@ -249,6 +249,8 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
+        // workaround for https://github.com/mapbox/leaflet-image/issues/84
+        if (!url) return url;
         // If it's a data URL we don't want to touch this.
         if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
             return url;
