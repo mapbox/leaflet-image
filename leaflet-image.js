@@ -1,17 +1,18 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.leafletImage = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/* global L */
+/* global L, Uint8Array */
 
 var queue = require('d3-queue').queue;
 
 var cacheBusterDate = +new Date();
 
 // leaflet-image
-module.exports = function leafletImage(map, callback) {
+module.exports = function leafletImage(map, callback, useAjax) {
 
     var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
-        layerQueue = new queue(1);
+        layerQueue = new queue(1),
+        imageCache = {};
 
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -49,6 +50,8 @@ module.exports = function leafletImage(map, callback) {
     function drawMarkerLayer(l) {
         if (l instanceof L.Marker && l.options.icon instanceof L.Icon) {
             layerQueue.defer(handleMarkerLayer, l);
+        } else if (typeof l.redraw === 'function' && l.canvas) {
+            layerQueue.defer(handleCanvasLayer, l);
         }
     }
     
@@ -69,6 +72,11 @@ module.exports = function leafletImage(map, callback) {
         layers.forEach(function (layer) {
             if (layer && layer.canvas) {
                 ctx.drawImage(layer.canvas, 0, 0);
+            }
+        });
+        layers.forEach(function (layer) {
+            if (layer && layer.img && !layer.canvas) {
+                ctx.drawImage(layer.img, 0, 0);
             }
         });
         done();
@@ -202,12 +210,14 @@ module.exports = function leafletImage(map, callback) {
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
             isBase64 = /^data\:/.test(marker._icon.src),
+            cache = imageCache[marker._icon.src],
             url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
             pos = pixelPoint.subtract(minPoint),
-            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true));
+            anchor = L.point(options.iconAnchor || size && size.divideBy(2, true)),
+            loaded = false;
 
         if (size instanceof L.Point) size = [size.x, size.y];
 
@@ -219,15 +229,41 @@ module.exports = function leafletImage(map, callback) {
         im.crossOrigin = '';
 
         im.onload = function () {
+            if (loaded) return;
+            loaded = true;
             ctx.drawImage(this, x, y, size[0], size[1]);
             callback(null, {
                 canvas: canvas
             });
         };
 
-        im.src = url;
+        if (useAjax && !isBase64) {
+            if (cache === undefined) {
+                getBase64(url, function (data) {
+                    im.src = imageCache[marker._icon.src] = 'data: image/png;base64, ' + data;
+                    if (!loaded) {
+                        setTimeout(function () {
+                            im.onload();
+                        },0);
+                    }
+                });
+            } else {
+                im.src = cache;
+                if (!loaded) {
+                    setTimeout(function () {
+                        im.onload();
+                    },0);
+                }
+            }
+        } else {
+            im.src = url;
 
-        if (isBase64) im.onload();
+            if (isBase64 && !loaded) {
+                setTimeout(function () {
+                    im.onload();
+                }, 0);
+            }
+        }
     }
     
     function handleEsriDymamicLayer(dynamicLayer, callback) {
@@ -261,7 +297,36 @@ module.exports = function leafletImage(map, callback) {
         var dataURLRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z\-]+\=[a-z\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$/i;
         return !!url.match(dataURLRegex);
     }
+  
+    function getBase64(url, callback) {
+        var request = new XMLHttpRequest();
+        request.open('GET', url, true);
+        request.responseType = 'arraybuffer';
+        request.onload = function () {
+            if (request.status >= 200 && request.status < 400) {
+                var buffer = this.response,
+                    binary = '',
+                    bytes = new Uint8Array(buffer),
+                    len = bytes.byteLength;
 
+                for (var i = 0; i < len; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                callback(btoa(binary));
+            }
+        };
+        request.send();
+    }
+	
+    function handleCanvasLayer(l, callback) {
+        l.redraw(function () {
+            var img = new Image();
+            img.src = l.canvas.toDataURL();
+            callback(null, {
+                img: img
+            });
+        });
+    }
 };
 
 },{"d3-queue":2}],2:[function(require,module,exports){
