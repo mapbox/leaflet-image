@@ -123,6 +123,7 @@ module.exports = function leafletImage(map, callback) {
                     var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y];
                     tileQueue.defer(canvasTile, tile, tilePos, tileSize);
                 } else {
+                    tilePoint.x = tilePoint.x % Math.pow(2, zoom + 1);
                     var url = addCacheString(layer.getTileUrl(tilePoint));
                     tileQueue.defer(loadTile, url, tilePos, tileSize);
                 }
