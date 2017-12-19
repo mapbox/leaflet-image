@@ -43,7 +43,25 @@ module.exports = function leafletImage(map, callback) {
 
     function drawTileLayer(l) {
         if (l instanceof L.TileLayer) layerQueue.defer(handleTileLayer, l);
+        else if (l instanceof L.ImageOverlay) layerQueue.defer(handleImageOverlay, l);
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
+    }
+
+    function handleImageOverlay(imgOverlay, callback) {
+        var imgBounds = imgOverlay.getBounds(),
+            bounds = new L.Bounds(
+                map.latLngToLayerPoint(imgBounds.getNorthWest()),
+                map.latLngToLayerPoint(imgBounds.getSouthEast())),
+            size = bounds.getSize();
+        var imageObj = new Image();
+        imageObj.src = imgOverlay._url;
+        imageObj.onload = function () {
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(this, bounds.min.x, bounds.min.y, size.x, size.y);
+            callback(null, {
+                canvas: canvas
+            });
+        };
     }
 
     function drawMarkerLayer(l) {
@@ -250,6 +268,8 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
+        // workaround for https://github.com/mapbox/leaflet-image/issues/84
+        if (!url) return url;
         // If it's a data URL we don't want to touch this.
         if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
             return url;
