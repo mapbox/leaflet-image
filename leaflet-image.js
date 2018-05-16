@@ -36,7 +36,18 @@ module.exports = function leafletImage(map, callback) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        if (firstCanvas) {
+            if (firstCanvas.classList.contains("heatmap-canvas")) {
+                map.eachLayer(function(layer) {
+                    if (layer._heatmap) {
+                        layerQueue.defer(handleHeatMap, layer);
+                    }
+                });
+                
+            } else {
+                layerQueue.defer(handlePathRoot, firstCanvas);
+            }
+        }
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
@@ -194,7 +205,26 @@ module.exports = function leafletImage(map, callback) {
             console.error('Element could not be drawn on canvas', root); // eslint-disable-line no-console
         }
     }
-
+    
+    function handleHeatMap(heatmap, callback) {
+        var canvas = document.createElement('canvas');
+        canvas.width = dimensions.x;
+        canvas.height = dimensions.y;
+    
+        var ctx = canvas.getContext('2d');
+    
+        var im = new Image();
+        im.crossOrigin = '';
+        im.src = heatmap._heatmap.getDataURL();
+    
+        im.onload = function() {
+            ctx.drawImage(im, 0, 0);
+            callback(null, {
+                canvas: canvas
+            });
+        };
+    }
+    
     function handleMarkerLayer(marker, callback) {
         var canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d'),
