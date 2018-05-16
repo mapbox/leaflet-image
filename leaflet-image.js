@@ -36,16 +36,19 @@ module.exports = function leafletImage(map, callback) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+        var canvases = map._panes.overlayPane.getElementsByTagName('canvas');
         if (firstCanvas) {
-            if (firstCanvas.classList.contains("heatmap-canvas")) {
+            if (!firstCanvas.classList.contains("heatmap-canvas")) {
+                layerQueue.defer(handlePathRoot, firstCanvas);
+            }
+        }
+        for (var i = 0; i < canvases.length; i++) {
+            if (canvases.item(i).classList.contains("heatmap-canvas")) {
                 map.eachLayer(function(layer) {
                     if (layer._heatmap) {
                         layerQueue.defer(handleHeatMap, layer);
                     }
                 });
-                
-            } else {
-                layerQueue.defer(handlePathRoot, firstCanvas);
             }
         }
     }
