@@ -35,8 +35,14 @@ module.exports = function leafletImage(map, callback) {
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
-        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        
+        var canvases = map._panes.overlayPane.getElementsByTagName('canvas');
+        if (canvases){
+            for(var i = 0;i<canvases.length;i++){
+                layerQueue.defer(handlePathRoot,canvases[i]);
+            }
+        }
+        
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
