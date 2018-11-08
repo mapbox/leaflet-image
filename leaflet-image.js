@@ -35,8 +35,14 @@ module.exports = function leafletImage(map, callback) {
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
-        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        
+        var canvases = map._panes.overlayPane.getElementsByTagName('canvas');
+        if (canvases){
+            for(var i = 0;i<canvases.length;i++){
+                layerQueue.defer(handlePathRoot,canvases[i]);
+            }
+        }
+        
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
@@ -184,9 +190,14 @@ module.exports = function leafletImage(map, callback) {
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
+        var opacity = root.style.opacity?root.style.opacity:1;
         var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
         try {
+            if(opacity!=1)
+                ctx.globalAlpha = opacity;
             ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
+            if(opacity!=1)
+                ctx.globalAlpha = 1;
             callback(null, {
                 canvas: canvas
             });
