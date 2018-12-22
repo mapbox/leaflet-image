@@ -31,7 +31,7 @@ module.exports = function leafletImage(map, callback) {
     // tiles, paths, and then markers
     map.eachLayer(drawTileLayer);
     map.eachLayer(drawEsriDynamicLayer);
-    
+
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
@@ -51,11 +51,11 @@ module.exports = function leafletImage(map, callback) {
             layerQueue.defer(handleMarkerLayer, l);
         }
     }
-    
+
     function drawEsriDynamicLayer(l) {
         if (!L.esri) return;
-       
-        if (l instanceof L.esri.DynamicMapLayer) {                       
+
+        if (l instanceof L.esri.DynamicMapLayer) {
             layerQueue.defer(handleEsriDymamicLayer, l);
         }
     }
@@ -197,12 +197,12 @@ module.exports = function leafletImage(map, callback) {
 
     function handleMarkerLayer(marker, callback) {
         var canvas = document.createElement('canvas'),
+            pngContainer = document.createElement('png-container'),
             ctx = canvas.getContext('2d'),
             pixelBounds = map.getPixelBounds(),
             minPoint = new L.Point(pixelBounds.min.x, pixelBounds.min.y),
             pixelPoint = map.project(marker.getLatLng()),
-            isBase64 = /^data\:/.test(marker._icon.src),
-            url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src),
+            isImage = !!marker._icon.src,
             im = new Image(),
             options = marker.options.icon.options,
             size = options.iconSize,
@@ -218,29 +218,60 @@ module.exports = function leafletImage(map, callback) {
         canvas.height = dimensions.y;
         im.crossOrigin = '';
 
-        im.onload = function () {
-            ctx.drawImage(this, x, y, size[0], size[1]);
-            callback(null, {
-                canvas: canvas
-            });
-        };
+        var url;
+
+        if(isImage) {
+
+            im.onload = function () {
+                ctx.drawImage(this, x, y, size[0], size[1]);
+                callback(null, {
+                    canvas: canvas
+                });
+            };
+
+            var isBase64 = /^data\:/.test(marker._icon.src);
+            url = isBase64 ? marker._icon.src : addCacheString(marker._icon.src);
+
+            if (isBase64) im.onload();
+
+        } else if(marker._icon.querySelector('svg')) {
+
+            var DOMURL = self.URL || self.webkitURL || self;
+            var svgString = new XMLSerializer().serializeToString(marker._icon.querySelector('svg'));
+            var svg = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+            url = DOMURL.createObjectURL(svg);
+
+            im.onload = function() {
+
+                ctx.drawImage(this, x, y);
+                callback(null, {
+                    canvas: canvas
+                });
+
+                var png = canvas.toDataURL("image/png");
+                pngContainer.innerHTML = '<img src="'+png+'"/>';
+                DOMURL.revokeObjectURL(png);
+
+            };
+
+
+        }
 
         im.src = url;
 
-        if (isBase64) im.onload();
     }
-    
+
     function handleEsriDymamicLayer(dynamicLayer, callback) {
         var canvas = document.createElement('canvas');
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
-    
+
         var ctx = canvas.getContext('2d');
-    
+
         var im = new Image();
         im.crossOrigin = '';
         im.src = addCacheString(dynamicLayer._currentImage._image.src);
-    
+
         im.onload = function() {
             ctx.drawImage(im, 0, 0);
             callback(null, {
